@@ -1,31 +1,52 @@
-import React, { useState } from 'react'
-import './CSS/LoginSignup.css'
+import React, { useEffect, useState } from "react";
+import "./CSS/LoginSignup.css";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const LoginSignup = () => {
-  const [mode, setMode] = useState("signup") // "signup" | "login"
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const [mode, setMode] = useState("signup"); // "signup" | "login"
+  const [name, setName] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Sync mode with URL
+  useEffect(() => {
+    if (location.pathname === "/login") {
+      setMode("login");
+    } else if (location.pathname === "/signup") {
+      setMode("signup");
+    }
+  }, [location.pathname]);
 
   const handleSubmit = async () => {
-    if (mode === "signup" && !name) {
-      setError("Please enter your name")
-      return
-    }
-    if (!email || !password) {
-      setError("Email and password are required")
-      return
+    if (mode === "signup") {
+      if (!name || !mobile || !email || !password) {
+        setError("Please fill all fields");
+        return;
+      }
+      if (!/^\d{10}$/.test(mobile)) {
+        setError("Mobile number must be 10 digits");
+        return;
+      }
+    } else {
+      if (!email || !password) {
+        setError("Email and password are required");
+        return;
+      }
     }
 
-    setLoading(true)
-    setError("")
+    setLoading(true);
+    setError("");
 
     const url =
       mode === "signup"
         ? "http://localhost:5000/api/signup"
-        : "http://localhost:5000/api/login"
+        : "http://localhost:5000/api/login";
 
     try {
       const res = await fetch(url, {
@@ -33,74 +54,87 @@ const LoginSignup = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           mode === "signup"
-            ? { name, email, password }
+            ? { name, mobile, email, password }
             : { email, password }
-        )
-      })
+        ),
+      });
 
-      const data = await res.json()
+      const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message || "Request failed")
-        return
+        setError(data.message || "Request failed");
+        return;
       }
 
-      alert(mode === "signup" ? "Signup successful!" : "Login successful!")
-      console.log(data)
+      alert(mode === "signup" ? "Signup successful!" : "Login successful!");
+      console.log(data);
     } catch (err) {
-      setError("Backend not reachable")
+      setError("Backend not reachable");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className='loginsignup'>
+    <div className="loginsignup">
       <div className="loginsignup-container">
         <h1>{mode === "signup" ? "Sign Up" : "Login"}</h1>
 
         <div className="loginsignup-fields">
           {mode === "signup" && (
-            <input
-              type="text"
-              placeholder='Your Name'
-              value={name}
-              onChange={e => setName(e.target.value)}
-            />
+            <>
+              <input
+                type="text"
+                placeholder="Your Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+
+              <input
+                type="tel"
+                placeholder="Mobile Number"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+              />
+            </>
           )}
 
           <input
             type="email"
-            placeholder='Email Address'
+            placeholder="Email Address"
             value={email}
-            onChange={e => setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
           />
 
           <input
             type="password"
-            placeholder='Password'
+            placeholder="Password"
             value={password}
-            onChange={e => setPassword(e.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
           />
         </div>
 
         <button onClick={handleSubmit} disabled={loading}>
           {loading
-            ? (mode === "signup" ? "Creating account..." : "Logging in...")
-            : (mode === "signup" ? "Continue" : "Login")}
+            ? mode === "signup"
+              ? "Creating account..."
+              : "Logging in..."
+            : mode === "signup"
+            ? "Continue"
+            : "Login"}
         </button>
 
         {error && <p className="error-text">{error}</p>}
 
         {mode === "signup" ? (
-          <p className='loginsignup-login'>
+          <p className="loginsignup-login">
             Already have an account?{" "}
-            <span onClick={() => setMode("login")}>Login here</span>
+            <span onClick={() => navigate("/login")}>Login here</span>
           </p>
         ) : (
-          <p className='loginsignup-login'>
+          <p className="loginsignup-login">
             Don’t have an account?{" "}
-            <span onClick={() => setMode("signup")}>Sign up</span>
+            <span onClick={() => navigate("/signup")}>Sign up</span>
           </p>
         )}
 
@@ -112,7 +146,7 @@ const LoginSignup = () => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default LoginSignup
+export default LoginSignup;
