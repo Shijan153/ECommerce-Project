@@ -54,7 +54,7 @@ const Navbar = () => {
 
         {/* Customer Login */}
         <Link to='/login'>
-          <button>Login</button>
+          <button className="log-btn">Login</button>
         </Link>
 
         {/* Seller Login */}
