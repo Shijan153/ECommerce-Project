@@ -78,3 +78,9 @@
     background: red;
     border-radius: 11px;
 }
+
+.seller-btn{
+  background:#0077ff;
+  color:white;
+  margin-left:10px;
+}
