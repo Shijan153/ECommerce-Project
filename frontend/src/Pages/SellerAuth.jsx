@@ -63,8 +63,8 @@ const SellerAuth = () => {
     setError("");
 
     const url = mode === "signup"
-      ? "http://localhost:5000/api/seller/signup"
-      : "http://localhost:5000/api/seller/login";
+      ? "http://localhost:5000/api/sellersignup"
+      : "http://localhost:5000/api/sellerlogin";
 
     try {
       const res = await fetch(url, {
