@@ -6,15 +6,15 @@ const LoginSignup = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [mode, setMode] = useState("signup"); // "signup" | "login"
+  const [mode, setMode] = useState("signup");
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Sync mode with URL
   useEffect(() => {
     if (location.pathname === "/login") {
       setMode("login");
@@ -31,6 +31,10 @@ const LoginSignup = () => {
       }
       if (!/^\d{10}$/.test(mobile)) {
         setError("Mobile number must be 10 digits");
+        return;
+      }
+      if (!agreeTerms) {
+        setError("Please agree to the terms and conditions");
         return;
       }
     } else {
@@ -67,7 +71,12 @@ const LoginSignup = () => {
       }
 
       alert(mode === "signup" ? "Signup successful!" : "Login successful!");
-      console.log(data);
+      
+      if (mode === "login") {
+        navigate("/");
+      } else {
+        navigate("/login");
+      }
     } catch (err) {
       setError("Backend not reachable");
     } finally {
@@ -133,14 +142,18 @@ const LoginSignup = () => {
           </p>
         ) : (
           <p className="loginsignup-login">
-            Don’t have an account?{" "}
+            Don't have an account?{" "}
             <span onClick={() => navigate("/signup")}>Sign up</span>
           </p>
         )}
 
         {mode === "signup" && (
           <div className="loginsignup-agree">
-            <input type="checkbox" />
+            <input 
+              type="checkbox" 
+              checked={agreeTerms}
+              onChange={(e) => setAgreeTerms(e.target.checked)}
+            />
             <p>By continuing, I agree to the terms of use & privacy policy</p>
           </div>
         )}
