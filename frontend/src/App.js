@@ -5,12 +5,13 @@ import ShopCategory from "./Pages/ShopCategory";
 import Shop from "./Pages/Shop";
 import Product from "./Pages/Product";
 import LoginSignup from "./Pages/LoginSignup";
-import SellerAuth from "./Pages/SellerAuth"; // Import the combined component
+import SellerAuth from "./Pages/SellerAuth";
 import Cart from "./Pages/Cart";
 import Footer from "./Components/Footer/Footer";
 import men_banner from "./Components/Assets/banner_mens.png";
 import women_banner from "./Components/Assets/banner_women.png";
 import kid_banner from "./Components/Assets/banner_kids.png";
+import SellerDashboard from "./Pages/SellerDashboard";
 
 function App() {
   return (
@@ -28,9 +29,12 @@ function App() {
         <Route path="/login" element={<LoginSignup />} />
         <Route path="/signup" element={<LoginSignup />} />
         
-        {/* Seller Auth - Both login and signup use same component with toggle */}
+        {/* Seller Auth */}
         <Route path="/seller-login" element={<SellerAuth />} />
         <Route path="/seller-signup" element={<SellerAuth />} />
+        
+        {/* Seller Dashboard */}
+        <Route path="/seller-dashboard" element={<SellerDashboard />} />
 
       </Routes>
       <Footer />

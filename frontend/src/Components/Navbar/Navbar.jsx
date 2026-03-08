@@ -8,7 +8,7 @@ import { ShopContext } from "../../Context/ShopContext";
 const Navbar = () => {
 
   const [menu,setMenu] = useState("shop");
-  const { getTotalCartItems } = useContext(ShopContext);
+  const { getTotalCartItems, sellerToken, sellerLogout } = useContext(ShopContext);
 
   return (
     <div className="navbar">
@@ -57,10 +57,19 @@ const Navbar = () => {
           <button className="log-btn">Login</button>
         </Link>
 
-        {/* Seller Login */}
-        <Link to='/seller-login'>
-          <button className="seller-btn">Seller Login</button>
-        </Link>
+        {/* Seller Section */}
+        {sellerToken ? (
+          <>
+            <Link to='/seller-dashboard'>
+              <button className="dashboard-btn">Dashboard</button>
+            </Link>
+            <button onClick={sellerLogout} className="logout-btn">Logout</button>
+          </>
+        ) : (
+          <Link to='/seller-login'>
+            <button className="seller-btn">Seller Login</button>
+          </Link>
+        )}
 
         {/* Cart */}
         <Link to='/cart'>

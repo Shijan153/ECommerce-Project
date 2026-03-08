@@ -85,7 +85,6 @@
     transform: scale(0.98);
 }
 
-/* Seller Login Button - Now matches the design */
 .nav-login-cart .seller-btn {
     background: #ff4141;
     color: white;
@@ -97,6 +96,7 @@
     background: #e63939;
     box-shadow: 0 6px 12px rgba(255, 65, 65, 0.3);
 }
+
 .nav-login-cart .log-btn {
     background: #436365;
     color: white;
@@ -108,11 +108,35 @@
     background: #507377;
     box-shadow: 0 6px 12px rgba(255, 65, 65, 0.3);
 }
-/* Regular Login Button - Matches your original design but cleaner */
-.nav-login-cart .login-btn {
-    background: rgb(72, 99, 122);
-    color: #515151;
-    border: 1px solid #7a7a7a;
+
+.nav-login-cart .dashboard-btn {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.3s;
+}
+
+.nav-login-cart .dashboard-btn:hover {
+    background: #45a049;
+}
+
+.nav-login-cart .logout-btn {
+    background: #f44336;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.3s;
+}
+
+.nav-login-cart .logout-btn:hover {
+    background: #da190b;
 }
 
 .nav-cart-count {
@@ -131,7 +155,6 @@
     left: -15px;
 }
 
-/* Responsive adjustments */
 @media (max-width: 1280px) {
     .nav-menu {
         gap: 20px;
