@@ -1,21 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import "./CSS/SellerAuth.css";
 import { useLocation, useNavigate } from "react-router-dom";
+import { ShopContext } from "../Context/ShopContext";
 
 const SellerAuth = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { sellerLogin, sellerSignup } = useContext(ShopContext);
 
-  const [mode, setMode] = useState("signup"); // "signup" | "login"
+  const [mode, setMode] = useState("signup");
   
-  // Signup fields
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [storeName, setStoreName] = useState("");
   
-  // Login fields
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   
@@ -23,7 +23,6 @@ const SellerAuth = () => {
   const [loading, setLoading] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
 
-  // Sync mode with URL
   useEffect(() => {
     if (location.pathname === "/seller-login") {
       setMode("login");
@@ -34,7 +33,6 @@ const SellerAuth = () => {
 
   const handleSubmit = async () => {
     if (mode === "signup") {
-      // Signup validation
       if (!name || !phone || !email || !password || !storeName) {
         setError("Please fill all fields");
         return;
@@ -52,7 +50,6 @@ const SellerAuth = () => {
         return;
       }
     } else {
-      // Login validation
       if (!loginEmail || !loginPassword) {
         setError("Email and password are required");
         return;
@@ -62,40 +59,22 @@ const SellerAuth = () => {
     setLoading(true);
     setError("");
 
-    const url = mode === "signup"
-      ? "http://localhost:5000/api/sellersignup"
-      : "http://localhost:5000/api/sellerlogin";
-
     try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          mode === "signup"
-            ? { name, phone, email, password, storeName }
-            : { email: loginEmail, password: loginPassword }
-        ),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.message || "Request failed");
-        return;
-      }
-
-      alert(mode === "signup" ? "Seller account created successfully!" : "Login successful!");
-      console.log(data);
+      let result;
       
-      if (mode === "login") {
-        // Redirect to seller dashboard or home
-        navigate("/");
+      if (mode === "signup") {
+        result = await sellerSignup(storeName, email, password);
       } else {
-        // After signup, switch to login or go to login page
-        navigate("/seller-login");
+        result = await sellerLogin(loginEmail, loginPassword);
+      }
+      
+      if (result.success) {
+        window.location.href = "/seller-dashboard";
+      } else {
+        setError(result.message);
       }
     } catch (err) {
-      setError("Backend not reachable");
+      setError("Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -112,7 +91,6 @@ const SellerAuth = () => {
 
         <div className="seller-auth-fields">
           {mode === "signup" ? (
-            // Signup Fields
             <>
               <input
                 type="text"
@@ -150,7 +128,6 @@ const SellerAuth = () => {
               />
             </>
           ) : (
-            // Login Fields
             <>
               <input
                 type="email"

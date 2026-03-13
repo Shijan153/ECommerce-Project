@@ -70,12 +70,10 @@ const LoginSignup = () => {
         return;
       }
 
-      alert(mode === "signup" ? "Signup successful!" : "Login successful!");
-      
-      if (mode === "login") {
-        navigate("/");
-      } else {
+      if (mode === "signup") {
         navigate("/login");
+      } else {
+        navigate("/");
       }
     } catch (err) {
       setError("Backend not reachable");

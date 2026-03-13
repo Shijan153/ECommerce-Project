@@ -24,18 +24,11 @@ function App() {
         <Route path="/kids" element={<ShopCategory banner={kid_banner} category="kids" />} />
         <Route path="/product/:productId" element={<Product />} />
         <Route path="/cart" element={<Cart />} />
-        
-        {/* Customer Auth */}
         <Route path="/login" element={<LoginSignup />} />
         <Route path="/signup" element={<LoginSignup />} />
-        
-        {/* Seller Auth */}
         <Route path="/seller-login" element={<SellerAuth />} />
         <Route path="/seller-signup" element={<SellerAuth />} />
-        
-        {/* Seller Dashboard */}
         <Route path="/seller-dashboard" element={<SellerDashboard />} />
-
       </Routes>
       <Footer />
     </BrowserRouter>
