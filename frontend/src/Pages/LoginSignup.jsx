@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import "./CSS/LoginSignup.css";
 import { useLocation, useNavigate } from "react-router-dom";
+import { ShopContext } from "../Context/ShopContext";
 
 const LoginSignup = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { customerLogin, customerSignup } = useContext(ShopContext);
 
   const [mode, setMode] = useState("signup");
   const [name, setName] = useState("");
@@ -47,33 +49,21 @@ const LoginSignup = () => {
     setLoading(true);
     setError("");
 
-    const url =
-      mode === "signup"
-        ? "http://localhost:5000/api/signup"
-        : "http://localhost:5000/api/login";
-
     try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          mode === "signup"
-            ? { name, mobile, email, password }
-            : { email, password }
-        ),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.message || "Request failed");
-        return;
-      }
-
       if (mode === "signup") {
-        navigate("/login");
+        const result = await customerSignup(name, mobile, email, password);
+        if (result.success) {
+          navigate("/login");
+        } else {
+          setError(result.message || "Signup failed");
+        }
       } else {
-        navigate("/");
+        const result = await customerLogin(email, password);
+        if (result.success) {
+          navigate("/");
+        } else {
+          setError(result.message || "Login failed");
+        }
       }
     } catch (err) {
       setError("Backend not reachable");
@@ -96,7 +86,6 @@ const LoginSignup = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
-
               <input
                 type="tel"
                 placeholder="Mobile Number"
@@ -123,12 +112,8 @@ const LoginSignup = () => {
 
         <button onClick={handleSubmit} disabled={loading}>
           {loading
-            ? mode === "signup"
-              ? "Creating account..."
-              : "Logging in..."
-            : mode === "signup"
-            ? "Continue"
-            : "Login"}
+            ? mode === "signup" ? "Creating account..." : "Logging in..."
+            : mode === "signup" ? "Continue" : "Login"}
         </button>
 
         {error && <p className="error-text">{error}</p>}
@@ -147,8 +132,8 @@ const LoginSignup = () => {
 
         {mode === "signup" && (
           <div className="loginsignup-agree">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={agreeTerms}
               onChange={(e) => setAgreeTerms(e.target.checked)}
             />

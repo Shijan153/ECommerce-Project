@@ -1,5 +1,4 @@
-import React, { useContext } from 'react';
-import { ShopContext } from '../Context/ShopContext';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Breadcrum from '../Components/Breadcrums/Breadcrum';
 import ProductDisplay from '../Components/ProductDisplay/ProductDisplay';
@@ -8,10 +7,28 @@ import RelatedProducts from '../Components/RelatedProducts/RelatedProducts';
 import ProductReviews from '../Components/Reviews/ProductReviews';
 
 const Product = () => {
-  const { all_product } = useContext(ShopContext);
   const { productId } = useParams();
-  const product = all_product.find((e) => e.id === Number(productId));
-  
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/api/products/${productId}`);
+        const data = await response.json();
+        setProduct(data.data);
+      } catch (error) {
+        console.error('Error fetching product:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProduct();
+  }, [productId]);
+
+  if (loading) return <div>Loading...</div>;
+  if (!product) return <div>Product not found</div>;
+
   return (
     <div>
       <Breadcrum product={product} />

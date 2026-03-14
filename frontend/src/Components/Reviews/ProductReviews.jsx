@@ -17,7 +17,7 @@ const ProductReviews = ({ productId }) => {
 
   const fetchReviews = useCallback(async () => {
     try {
-      const response = await fetch(`http://localhost:4000/api/reviews/${productId}`);
+      const response = await fetch(`http://localhost:5000/api/reviews/${productId}`);
       const data = await response.json();
       if (response.ok) {
         setReviews(data.reviews);
@@ -32,7 +32,7 @@ const ProductReviews = ({ productId }) => {
   const checkUserReview = useCallback(async () => {
     if (!token) return;
     try {
-      const response = await fetch(`http://localhost:4000/api/reviews/${productId}/user`, {
+      const response = await fetch(`http://localhost:5000/api/reviews/${productId}/user`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -66,7 +66,7 @@ const ProductReviews = ({ productId }) => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:4000/api/reviews', {
+      const response = await fetch('http://localhost:5000/api/reviews', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -100,7 +100,7 @@ const ProductReviews = ({ productId }) => {
     
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:4000/api/reviews/${userReview.review_id}`, {
+      const response = await fetch(`http://localhost:5000/api/reviews/${userReview.review_id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -132,7 +132,7 @@ const ProductReviews = ({ productId }) => {
     if (!window.confirm('Are you sure you want to delete your review?')) return;
     
     try {
-      const response = await fetch(`http://localhost:4000/api/reviews/${userReview.review_id}`, {
+      const response = await fetch(`http://localhost:5000/api/reviews/${userReview.review_id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

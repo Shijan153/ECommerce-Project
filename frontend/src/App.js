@@ -12,6 +12,8 @@ import men_banner from "./Components/Assets/banner_mens.png";
 import women_banner from "./Components/Assets/banner_women.png";
 import kid_banner from "./Components/Assets/banner_kids.png";
 import SellerDashboard from "./Pages/SellerDashboard";
+import Checkout from "./Pages/Checkout";
+import OrderConfirmation from "./Pages/OrderConfirmation";
 
 function App() {
   return (
@@ -29,6 +31,8 @@ function App() {
         <Route path="/seller-login" element={<SellerAuth />} />
         <Route path="/seller-signup" element={<SellerAuth />} />
         <Route path="/seller-dashboard" element={<SellerDashboard />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/order-confirmation" element={<OrderConfirmation />} />
       </Routes>
       <Footer />
     </BrowserRouter>

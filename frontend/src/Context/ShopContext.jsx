@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useCallback, useRef } from "react";
 
 export const ShopContext = createContext(null);
 
@@ -8,10 +8,19 @@ const ShopContextProvider = (props) => {
   const [sellerToken, setSellerToken] = useState(localStorage.getItem('seller-token'));
   const [sellerProducts, setSellerProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
+  const syncTimeout = useRef(null);
 
   useEffect(() => {
     fetchAllProducts();
   }, []);
+
+  useEffect(() => {
+    if (token) {
+      fetchCartFromDB(token);
+    } else {
+      setCartItems({});
+    }
+  }, [token]);
 
   const fetchAllProducts = async () => {
     try {
@@ -23,35 +32,90 @@ const ShopContextProvider = (props) => {
     }
   };
 
-  useEffect(() => {
-    console.log('Seller token in context:', sellerToken);
-  }, [sellerToken]);
+  const fetchCartFromDB = async (authToken) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/cart', {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      const data = await response.json();
+      if (data.data?.items?.length > 0) {
+        const restored = {};
+        data.data.items.forEach(item => {
+          if (item.quantity > 0) {
+            restored[item.product_id] = item.quantity;
+          }
+        });
+        setCartItems(restored);
+      }
+    } catch (error) {
+      console.error('Error fetching cart from DB:', error);
+    }
+  };
+
+  const syncCartToDB = useCallback((updatedCart) => {
+    const authToken = localStorage.getItem('auth-token');
+    if (!authToken) return;
+
+    if (syncTimeout.current) clearTimeout(syncTimeout.current);
+
+    syncTimeout.current = setTimeout(async () => {
+      try {
+        const items = Object.keys(updatedCart)
+          .filter(id => updatedCart[id] > 0)
+          .map(id => {
+            const product = allProducts.find(p => p.product_id === Number(id));
+            return {
+              product_id: Number(id),
+              quantity: updatedCart[id],
+              price: product ? parseFloat(product.product_price) : 0
+            };
+          });
+
+        const total_amount = items.reduce(
+          (sum, item) => sum + item.price * item.quantity, 0
+        );
+
+        await fetch('http://localhost:5000/api/cart/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({ items, total_amount: total_amount.toFixed(2) })
+        });
+      } catch (error) {
+        console.error('Error syncing cart:', error);
+      }
+    }, 500);
+  }, [allProducts]);
 
   const addToCart = (itemId) => {
-    setCartItems((prev) => ({
-      ...prev,
-      [itemId]: (prev[itemId] || 0) + 1
-    }));
+    setCartItems(prev => {
+      const updated = { ...prev, [itemId]: (prev[itemId] || 0) + 1 };
+      syncCartToDB(updated);
+      return updated;
+    });
   };
 
   const removeFromCart = (itemId) => {
-    setCartItems((prev) => ({
-      ...prev,
-      [itemId]: Math.max((prev[itemId] || 0) - 1, 0)
-    }));
+    setCartItems(prev => {
+      const updated = { ...prev, [itemId]: Math.max((prev[itemId] || 0) - 1, 0) };
+      syncCartToDB(updated);
+      return updated;
+    });
   };
 
   const getTotalCartAmount = () => {
     let totalAmount = 0;
     for (const item in cartItems) {
       if (cartItems[item] > 0) {
-        const itemInfo = allProducts.find((product) => product.product_id === Number(item));
+        const itemInfo = allProducts.find(p => p.product_id === Number(item));
         if (itemInfo) {
-          totalAmount += itemInfo.product_price * cartItems[item];
+          totalAmount += parseFloat(itemInfo.product_price) * cartItems[item];
         }
       }
     }
-    return totalAmount;
+    return totalAmount.toFixed(2);
   };
 
   const getTotalCartItems = () => {
@@ -71,12 +135,11 @@ const ShopContextProvider = (props) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-
       const data = await response.json();
       if (response.ok) {
-        const token = data.data?.token || data.token;
-        localStorage.setItem('auth-token', token);
-        setToken(token);
+        const authToken = data.data?.token || data.token;
+        localStorage.setItem('auth-token', authToken);
+        setToken(authToken);
         return { success: true };
       } else {
         return { success: false, message: data.message };
@@ -93,7 +156,6 @@ const ShopContextProvider = (props) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, mobile, email, password })
       });
-
       const data = await response.json();
       if (response.ok) {
         return { success: true };
@@ -108,15 +170,14 @@ const ShopContextProvider = (props) => {
   const customerLogout = () => {
     localStorage.removeItem('auth-token');
     setToken(null);
+    setCartItems({});
   };
 
   const fetchSellerProducts = async () => {
     try {
-      const token = localStorage.getItem('seller-token');
+      const sToken = localStorage.getItem('seller-token');
       const response = await fetch('http://localhost:5000/api/seller/products', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${sToken}` }
       });
       const data = await response.json();
       setSellerProducts(data.data || []);
@@ -132,24 +193,18 @@ const ShopContextProvider = (props) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-
       const data = await response.json();
-      console.log('Login response:', data);
-
       if (response.ok) {
-        const token = data.data?.token || data.token;
-        if (token) {
-          localStorage.setItem('seller-token', token);
-          setSellerToken(token);
+        const sToken = data.data?.token || data.token;
+        if (sToken) {
+          localStorage.setItem('seller-token', sToken);
+          setSellerToken(sToken);
           return { success: true };
-        } else {
-          return { success: false, message: 'No token in response' };
         }
-      } else {
-        return { success: false, message: data.message || 'Login failed' };
+        return { success: false, message: 'No token in response' };
       }
+      return { success: false, message: data.message || 'Login failed' };
     } catch (error) {
-      console.error('Login error:', error);
       return { success: false, message: 'Network error' };
     }
   };
@@ -161,16 +216,14 @@ const ShopContextProvider = (props) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ storeName, email, password })
       });
-
       const data = await response.json();
       if (response.ok) {
-        const token = data.data?.token || data.token;
-        localStorage.setItem('seller-token', token);
-        setSellerToken(token);
+        const sToken = data.data?.token || data.token;
+        localStorage.setItem('seller-token', sToken);
+        setSellerToken(sToken);
         return { success: true };
-      } else {
-        return { success: false, message: data.message };
       }
+      return { success: false, message: data.message };
     } catch (error) {
       return { success: false, message: 'Network error' };
     }
@@ -186,7 +239,9 @@ const ShopContextProvider = (props) => {
     getTotalCartItems,
     getTotalCartAmount,
     all_product: allProducts,
+    allProducts,
     cartItems,
+    setCartItems,
     addToCart,
     removeFromCart,
     token,
