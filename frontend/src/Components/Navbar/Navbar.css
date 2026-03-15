@@ -42,9 +42,7 @@
     transition: color 0.3s ease;
 }
 
-.nav-menu li:hover {
-    color: #ff4141;
-}
+.nav-menu li:hover { color: #ff4141; }
 
 .nav-menu hr {
     border: none;
@@ -101,12 +99,12 @@
     background: #436365;
     color: white;
     border: none;
-    box-shadow: 0 4px 8px rgba(255, 65, 65, 0.2);
+    box-shadow: 0 4px 8px rgba(67, 99, 101, 0.2);
 }
 
 .nav-login-cart .log-btn:hover {
     background: #507377;
-    box-shadow: 0 6px 12px rgba(255, 65, 65, 0.3);
+    box-shadow: 0 6px 12px rgba(67, 99, 101, 0.3);
 }
 
 .nav-login-cart .dashboard-btn {
@@ -120,9 +118,7 @@
     transition: background 0.3s;
 }
 
-.nav-login-cart .dashboard-btn:hover {
-    background: #45a049;
-}
+.nav-login-cart .dashboard-btn:hover { background: #45a049; }
 
 .nav-login-cart .logout-btn {
     background: #f44336;
@@ -135,9 +131,22 @@
     transition: background 0.3s;
 }
 
-.nav-login-cart .logout-btn:hover {
-    background: #da190b;
+.nav-login-cart .logout-btn:hover { background: #da190b; }
+
+.nav-login-cart .admin-btn {
+    background: #1a1a2e;
+    color: white;
+    border: none;
+    width: 90px;
+    height: 40px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
 }
+
+.nav-login-cart .admin-btn:hover { background: #e94560; }
 
 .nav-cart-count {
     width: 20px;
@@ -156,18 +165,8 @@
 }
 
 @media (max-width: 1280px) {
-    .nav-menu {
-        gap: 20px;
-        font-size: 16px;
-    }
-    
-    .nav-logo p {
-        font-size: 28px;
-    }
-    
-    .nav-login-cart button {
-        width: 100px;
-        height: 40px;
-        font-size: 14px;
-    }
+    .nav-menu { gap: 20px; font-size: 16px; }
+    .nav-logo p { font-size: 28px; }
+    .nav-login-cart button { width: 100px; height: 40px; font-size: 14px; }
+    .nav-login-cart .admin-btn { width: 75px; height: 36px; font-size: 13px; }
 }

@@ -14,6 +14,8 @@ import kid_banner from "./Components/Assets/banner_kids.png";
 import SellerDashboard from "./Pages/SellerDashboard";
 import Checkout from "./Pages/Checkout";
 import OrderConfirmation from "./Pages/OrderConfirmation";
+import AdminLogin from "./Pages/AdminLogin";
+import AdminPanel from "./Pages/AdminPanel";
 
 function App() {
   return (
@@ -33,6 +35,8 @@ function App() {
         <Route path="/seller-dashboard" element={<SellerDashboard />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/order-confirmation" element={<OrderConfirmation />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/admin" element={<AdminPanel />} />
       </Routes>
       <Footer />
     </BrowserRouter>

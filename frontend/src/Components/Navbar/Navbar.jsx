@@ -8,6 +8,7 @@ import { ShopContext } from "../../Context/ShopContext";
 const Navbar = () => {
   const [menu, setMenu] = useState("shop");
   const { getTotalCartItems, token, sellerToken, sellerLogout, customerLogout } = useContext(ShopContext);
+  const adminToken = localStorage.getItem("admin-token");
 
   return (
     <div className="navbar">
@@ -62,6 +63,16 @@ const Navbar = () => {
         ) : (
           <Link to='/seller-login'>
             <button className="seller-btn">Seller Login</button>
+          </Link>
+        )}
+
+        {adminToken ? (
+          <Link to='/admin'>
+            <button className="admin-btn">Admin</button>
+          </Link>
+        ) : (
+          <Link to='/admin-login'>
+            <button className="admin-btn">Admin</button>
           </Link>
         )}
 
