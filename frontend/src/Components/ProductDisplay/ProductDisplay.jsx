@@ -1,5 +1,5 @@
-import React, { useContext, useState } from 'react'
-import './ProductDisplay.css'
+import React, { useContext, useState } from 'react';
+import './ProductDisplay.css';
 import star_icon from "../Assets/star_icon.png";
 import star_dull_icon from "../Assets/star_dull_icon.png";
 import { ShopContext } from '../../Context/ShopContext';
@@ -10,10 +10,11 @@ const ProductDisplay = (props) => {
     const [selectedSize, setSelectedSize] = useState('');
     const [sizeError, setSizeError] = useState('');
 
-    const imageUrl = product.image_url
-        ? `http://localhost:5000${product.image_url}`
-        : 'https://placehold.co/200x200';
+    // ✅ FIXED: Use the Cloudinary URL directly from the database.
+    // Prepending 'http://localhost:5000' was creating an invalid double-URL.
+    const imageUrl = product.image_url || 'https://placehold.co/400x500?text=No+Image';
 
+    // Excellent defensive check for PostgreSQL JSON/Array types
     const sizes = product.sizes
         ? (Array.isArray(product.sizes) ? product.sizes : JSON.parse(product.sizes))
         : [];
@@ -24,6 +25,7 @@ const ProductDisplay = (props) => {
             return;
         }
         setSizeError('');
+        // Ensure you're passing the product_id as defined in your Postgres schema
         addToCart(product.product_id, selectedSize);
     };
 
@@ -45,19 +47,23 @@ const ProductDisplay = (props) => {
             <div className="productdisplay-right">
                 <h1>{product.product_name}</h1>
                 <div className="productdisplay-right-star">
-                    {[1,2,3,4,5].map(star => (
+                    {[1, 2, 3, 4, 5].map(star => (
                         <img key={star}
                             src={star <= avgStars ? star_icon : star_dull_icon}
-                            alt=""
+                            alt="rating star"
                         />
                     ))}
                     <p>({product.review_count || 0})</p>
                 </div>
                 <div className="productdisplay-right-prices">
                     {product.old_price && (
-                        <div className="productdisplay-right-price-old">${product.old_price}</div>
+                        <div className="productdisplay-right-price-old">
+                            ${parseFloat(product.old_price).toFixed(2)}
+                        </div>
                     )}
-                    <div className="productdisplay-right-price-new">${product.product_price}</div>
+                    <div className="productdisplay-right-price-new">
+                        ${parseFloat(product.product_price).toFixed(2)}
+                    </div>
                 </div>
                 <div className="productdisplay-right-description">
                     {product.product_description}
@@ -79,7 +85,7 @@ const ProductDisplay = (props) => {
                                 </div>
                             ))}
                         </div>
-                        {sizeError && <p className="size-error">{sizeError}</p>}
+                        {sizeError && <p className="size-error" style={{color: 'red', marginTop: '10px'}}>{sizeError}</p>}
                         {selectedSize && (
                             <p className="size-chosen">Selected: <strong>{selectedSize}</strong></p>
                         )}

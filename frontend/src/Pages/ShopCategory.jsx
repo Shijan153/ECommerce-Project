@@ -10,8 +10,12 @@ const ShopCategory = (props) => {
 
   const fetchProducts = useCallback(async () => {
     try {
+      setLoading(true);
+      // Fetches products based on category from your Node.js/Postgres API
       const response = await fetch(`http://localhost:5000/api/products?category=${props.category}`);
       const data = await response.json();
+      
+      // Ensure we set the state using the 'data' array from your responseHandler
       setProducts(data.data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -27,10 +31,12 @@ const ShopCategory = (props) => {
   const sortProducts = (order) => {
     setSortOrder(order);
     let sorted = [...products];
+    
+    // Using parseFloat because Postgres NUMERIC/DECIMAL types often arrive as strings
     if (order === 'price-low') {
-      sorted.sort((a, b) => a.product_price - b.product_price);
+      sorted.sort((a, b) => parseFloat(a.product_price) - parseFloat(b.product_price));
     } else if (order === 'price-high') {
-      sorted.sort((a, b) => b.product_price - a.product_price);
+      sorted.sort((a, b) => parseFloat(b.product_price) - parseFloat(a.product_price));
     }
     setProducts(sorted);
   };
@@ -70,7 +76,11 @@ const ShopCategory = (props) => {
               key={item.product_id}
               id={item.product_id}
               name={item.product_name}
-              image={item.image_url ? `http://localhost:5000${item.image_url}` : null}
+              /* ✅ Corrected: Using the Cloudinary URL directly from the DB.
+                 Since your DB stores 'https://res.cloudinary.com/...', 
+                 prepending 'http://localhost:5000' would break the link.
+              */
+              image={item.image_url} 
               new_price={item.product_price}
               old_price={item.old_price}
             />
@@ -81,7 +91,9 @@ const ShopCategory = (props) => {
       </div>
 
       {products.length > 12 && (
-        <div className="shopcategory-loadmore">Load More</div>
+        <div className="shopcategory-loadmore">
+          Explore More
+        </div>
       )}
     </div>
   );
