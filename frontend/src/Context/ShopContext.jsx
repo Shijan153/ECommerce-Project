@@ -4,22 +4,18 @@ export const ShopContext = createContext(null);
 
 const ShopContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
+  const [cartSizes, setCartSizes] = useState({});
   const [token, setToken] = useState(localStorage.getItem('auth-token'));
   const [sellerToken, setSellerToken] = useState(localStorage.getItem('seller-token'));
   const [sellerProducts, setSellerProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const syncTimeout = useRef(null);
 
-  useEffect(() => {
-    fetchAllProducts();
-  }, []);
+  useEffect(() => { fetchAllProducts(); }, []);
 
   useEffect(() => {
-    if (token) {
-      fetchCartFromDB(token);
-    } else {
-      setCartItems({});
-    }
+    if (token) fetchCartFromDB(token);
+    else setCartItems({});
   }, [token]);
 
   const fetchAllProducts = async () => {
@@ -40,24 +36,25 @@ const ShopContextProvider = (props) => {
       const data = await response.json();
       if (data.data?.items?.length > 0) {
         const restored = {};
+        const restoredSizes = {};
         data.data.items.forEach(item => {
           if (item.quantity > 0) {
             restored[item.product_id] = item.quantity;
+            if (item.selected_size) restoredSizes[item.product_id] = item.selected_size;
           }
         });
         setCartItems(restored);
+        setCartSizes(restoredSizes);
       }
     } catch (error) {
       console.error('Error fetching cart from DB:', error);
     }
   };
 
-  const syncCartToDB = useCallback((updatedCart) => {
+  const syncCartToDB = useCallback((updatedCart, updatedSizes) => {
     const authToken = localStorage.getItem('auth-token');
     if (!authToken) return;
-
     if (syncTimeout.current) clearTimeout(syncTimeout.current);
-
     syncTimeout.current = setTimeout(async () => {
       try {
         const items = Object.keys(updatedCart)
@@ -67,14 +64,11 @@ const ShopContextProvider = (props) => {
             return {
               product_id: Number(id),
               quantity: updatedCart[id],
-              price: product ? parseFloat(product.product_price) : 0
+              price: product ? parseFloat(product.product_price) : 0,
+              selected_size: updatedSizes[id] || null
             };
           });
-
-        const total_amount = items.reduce(
-          (sum, item) => sum + item.price * item.quantity, 0
-        );
-
+        const total_amount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
         await fetch('http://localhost:5000/api/cart/sync', {
           method: 'POST',
           headers: {
@@ -89,10 +83,12 @@ const ShopContextProvider = (props) => {
     }, 500);
   }, [allProducts]);
 
-  const addToCart = (itemId) => {
+  const addToCart = (itemId, size = '') => {
     setCartItems(prev => {
       const updated = { ...prev, [itemId]: (prev[itemId] || 0) + 1 };
-      syncCartToDB(updated);
+      const updatedSizes = size ? { ...cartSizes, [itemId]: size } : cartSizes;
+      if (size) setCartSizes(updatedSizes);
+      syncCartToDB(updated, size ? updatedSizes : cartSizes);
       return updated;
     });
   };
@@ -100,7 +96,7 @@ const ShopContextProvider = (props) => {
   const removeFromCart = (itemId) => {
     setCartItems(prev => {
       const updated = { ...prev, [itemId]: Math.max((prev[itemId] || 0) - 1, 0) };
-      syncCartToDB(updated);
+      syncCartToDB(updated, cartSizes);
       return updated;
     });
   };
@@ -110,9 +106,7 @@ const ShopContextProvider = (props) => {
     for (const item in cartItems) {
       if (cartItems[item] > 0) {
         const itemInfo = allProducts.find(p => p.product_id === Number(item));
-        if (itemInfo) {
-          totalAmount += parseFloat(itemInfo.product_price) * cartItems[item];
-        }
+        if (itemInfo) totalAmount += parseFloat(itemInfo.product_price) * cartItems[item];
       }
     }
     return totalAmount.toFixed(2);
@@ -121,9 +115,7 @@ const ShopContextProvider = (props) => {
   const getTotalCartItems = () => {
     let totalItem = 0;
     for (const item in cartItems) {
-      if (cartItems[item] > 0) {
-        totalItem += cartItems[item];
-      }
+      if (cartItems[item] > 0) totalItem += cartItems[item];
     }
     return totalItem;
   };
@@ -141,12 +133,9 @@ const ShopContextProvider = (props) => {
         localStorage.setItem('auth-token', authToken);
         setToken(authToken);
         return { success: true };
-      } else {
-        return { success: false, message: data.message };
       }
-    } catch (error) {
-      return { success: false, message: 'Network error' };
-    }
+      return { success: false, message: data.message };
+    } catch { return { success: false, message: 'Network error' }; }
   };
 
   const customerSignup = async (name, mobile, email, password) => {
@@ -157,20 +146,16 @@ const ShopContextProvider = (props) => {
         body: JSON.stringify({ name, mobile, email, password })
       });
       const data = await response.json();
-      if (response.ok) {
-        return { success: true };
-      } else {
-        return { success: false, message: data.message };
-      }
-    } catch (error) {
-      return { success: false, message: 'Network error' };
-    }
+      if (response.ok) return { success: true };
+      return { success: false, message: data.message };
+    } catch { return { success: false, message: 'Network error' }; }
   };
 
   const customerLogout = () => {
     localStorage.removeItem('auth-token');
     setToken(null);
     setCartItems({});
+    setCartSizes({});
   };
 
   const fetchSellerProducts = async () => {
@@ -204,17 +189,15 @@ const ShopContextProvider = (props) => {
         return { success: false, message: 'No token in response' };
       }
       return { success: false, message: data.message || 'Login failed' };
-    } catch (error) {
-      return { success: false, message: 'Network error' };
-    }
+    } catch { return { success: false, message: 'Network error' }; }
   };
 
-  const sellerSignup = async (storeName, email, password) => {
+  const sellerSignup = async (storeName, email, password, name, phone_no) => {
     try {
       const response = await fetch('http://localhost:5000/api/sellersignup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ storeName, email, password })
+        body: JSON.stringify({ store_name: storeName, email, password, name, phone_no })
       });
       const data = await response.json();
       if (response.ok) {
@@ -224,9 +207,7 @@ const ShopContextProvider = (props) => {
         return { success: true };
       }
       return { success: false, message: data.message };
-    } catch (error) {
-      return { success: false, message: 'Network error' };
-    }
+    } catch { return { success: false, message: 'Network error' }; }
   };
 
   const sellerLogout = () => {
@@ -241,6 +222,7 @@ const ShopContextProvider = (props) => {
     all_product: allProducts,
     allProducts,
     cartItems,
+    cartSizes,
     setCartItems,
     addToCart,
     removeFromCart,

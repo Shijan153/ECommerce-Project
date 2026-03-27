@@ -1,0 +1,257 @@
+.order-tracking-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.ot-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.ot-header h1 {
+  font-size: 32px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 8px;
+}
+
+.ot-header p { color: #888; font-size: 16px; }
+
+.ot-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 16px;
+  color: #888;
+}
+
+.ot-spinner {
+  width: 40px; height: 40px;
+  border: 4px solid #f0f0f0;
+  border-top-color: #ff4141;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.ot-error {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.ot-empty {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.ot-empty-icon { font-size: 64px; margin-bottom: 16px; }
+.ot-empty h2 { font-size: 24px; color: #333; margin-bottom: 8px; }
+.ot-empty p { color: #888; margin-bottom: 24px; }
+
+.ot-empty button {
+  padding: 12px 32px;
+  background: #ff4141;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.ot-empty button:hover { background: #e63939; }
+
+.ot-orders-list { display: flex; flex-direction: column; gap: 20px; }
+
+.ot-order-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+  border: 1px solid #f0f0f0;
+}
+
+.ot-order-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+.ot-order-card.cancelled { border-left: 4px solid #dc2626; opacity: 0.85; }
+
+.ot-order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ot-order-header:hover { background: #fafafa; }
+
+.ot-order-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ot-order-id { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+.ot-order-date { font-size: 13px; color: #888; }
+
+.ot-order-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ot-amount { font-size: 18px; font-weight: 700; color: #ff4141; }
+
+.ot-status-pill {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ot-expand-icon { font-size: 12px; color: #888; }
+
+/* Progress Bar */
+.ot-progress {
+  display: flex;
+  align-items: flex-start;
+  padding: 20px 24px;
+  background: #fafafa;
+  border-top: 1px solid #f0f0f0;
+  overflow-x: auto;
+}
+
+.ot-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ot-step-circle {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: white;
+  font-weight: 700;
+  transition: all 0.3s;
+}
+
+.ot-step.completed .ot-step-circle { color: white; }
+
+.ot-step:not(.completed) .ot-step-circle {
+  background: #e5e7eb;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.ot-step.active .ot-step-circle {
+  box-shadow: 0 0 0 4px rgba(255,65,65,0.2);
+  transform: scale(1.15);
+}
+
+.ot-step-label {
+  font-size: 11px;
+  color: #888;
+  text-align: center;
+  max-width: 70px;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.ot-step.completed .ot-step-label { color: #333; font-weight: 600; }
+.ot-step.active .ot-step-label { color: #ff4141; font-weight: 700; }
+
+.ot-step-line {
+  flex: 1;
+  height: 3px;
+  background: #e5e7eb;
+  margin-top: 18px;
+  min-width: 30px;
+  transition: background 0.3s;
+}
+
+.ot-step-line.completed { background: #16a34a; }
+
+/* Expanded Details */
+.ot-order-details {
+  padding: 24px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.ot-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.ot-detail-section h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.ot-detail-section p {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #444;
+  margin-bottom: 8px;
+  gap: 12px;
+}
+
+.ot-detail-section p span { color: #888; flex-shrink: 0; }
+.ot-detail-section p strong { text-align: right; }
+
+.ot-item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.ot-item-row:last-child { border-bottom: none; }
+
+.ot-item-row img {
+  width: 50px; height: 50px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.ot-item-row div { flex: 1; }
+.ot-item-row div p { font-size: 13px; color: #444; margin: 0 0 2px; }
+.ot-item-row strong { font-size: 14px; color: #1a1a2e; }
+
+.ot-size {
+  font-size: 12px !important;
+  color: #ff4141 !important;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .ot-details-grid { grid-template-columns: 1fr; }
+  .ot-order-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .ot-order-right { flex-wrap: wrap; }
+}

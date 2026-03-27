@@ -7,7 +7,6 @@ const OrderConfirmation = () => {
   const navigate = useNavigate();
   const tran_id = searchParams.get('tran_id');
   const status = searchParams.get('status');
-
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -23,12 +22,8 @@ const OrderConfirmation = () => {
         setLoading(false);
       }
     };
-
-    if (tran_id) {
-      fetchOrder();
-    } else {
-      setLoading(false);
-    }
+    if (tran_id) fetchOrder();
+    else setLoading(false);
   }, [tran_id]);
 
   if (loading) return <div className="confirmation-loading">Loading order details...</div>;
@@ -44,18 +39,13 @@ const OrderConfirmation = () => {
         </div>
 
         <h1 className={`confirmation-title ${isSuccess ? 'success' : 'failed'}`}>
-          {isSuccess
-            ? 'Order Placed Successfully!'
-            : isCancelled
-            ? 'Payment Cancelled'
-            : 'Payment Failed'}
+          {isSuccess ? 'Order Placed Successfully!'
+            : isCancelled ? 'Payment Cancelled' : 'Payment Failed'}
         </h1>
 
         <p className="confirmation-subtitle">
-          {isSuccess
-            ? 'Thank you for your order. We will process it shortly.'
-            : isCancelled
-            ? 'Your payment was cancelled. Your order has not been placed.'
+          {isSuccess ? 'Thank you for your order. We will process it shortly.'
+            : isCancelled ? 'Your payment was cancelled. Your order has not been placed.'
             : 'Something went wrong with your payment. Please try again.'}
         </p>
 
@@ -76,9 +66,7 @@ const OrderConfirmation = () => {
               </div>
               <div className="info-row">
                 <span>Payment Status</span>
-                <strong className={`status-badge ${order.payment_status}`}>
-                  {order.payment_status}
-                </strong>
+                <strong className={`status-badge ${order.payment_status}`}>{order.payment_status}</strong>
               </div>
               <div className="info-row">
                 <span>Shipping To</span>
@@ -102,6 +90,9 @@ const OrderConfirmation = () => {
                     <div>
                       <p>{item.product_name}</p>
                       <p>Qty: {item.quantity} × ${parseFloat(item.price).toFixed(2)}</p>
+                      {item.selected_size && (
+                        <p className="item-size-tag">Size: {item.selected_size}</p>
+                      )}
                     </div>
                     <strong>${(item.quantity * parseFloat(item.price)).toFixed(2)}</strong>
                   </div>
@@ -115,6 +106,11 @@ const OrderConfirmation = () => {
           <button className="btn-primary" onClick={() => navigate('/')}>
             Continue Shopping
           </button>
+          {isSuccess && (
+            <button className="btn-track" onClick={() => navigate('/my-orders')}>
+              📦 Track My Orders
+            </button>
+          )}
           {!isSuccess && (
             <button className="btn-secondary" onClick={() => navigate('/cart')}>
               Back to Cart

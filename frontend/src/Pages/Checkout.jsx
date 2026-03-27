@@ -4,7 +4,7 @@ import { ShopContext } from '../Context/ShopContext';
 import './CSS/Checkout.css';
 
 const Checkout = () => {
-  const { cartItems, allProducts, setCartItems } = useContext(ShopContext);
+  const { cartItems, cartSizes, allProducts, setCartItems } = useContext(ShopContext);
   const token = useContext(ShopContext).token || localStorage.getItem('auth-token');
   const navigate = useNavigate();
 
@@ -51,7 +51,8 @@ const Checkout = () => {
     return cartProductList.map(p => ({
       product_id: p.product_id,
       quantity: cartItems[p.product_id],
-      price: parseFloat(p.product_price)
+      price: parseFloat(p.product_price),
+      selected_size: cartSizes?.[p.product_id] || null
     }));
   };
 
@@ -237,6 +238,9 @@ const Checkout = () => {
                   <div className="order-item-info">
                     <p className="order-item-name">{p.product_name}</p>
                     <p className="order-item-qty">Qty: {cartItems[p.product_id]}</p>
+                    {cartSizes?.[p.product_id] && (
+                      <p className="order-item-size">Size: {cartSizes[p.product_id]}</p>
+                    )}
                   </div>
                   <p className="order-item-price">
                     ${(parseFloat(p.product_price) * cartItems[p.product_id]).toFixed(2)}

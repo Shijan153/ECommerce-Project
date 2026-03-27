@@ -7,8 +7,9 @@ import { ShopContext } from "../../Context/ShopContext";
 
 const Navbar = () => {
   const [menu, setMenu] = useState("shop");
-  const { getTotalCartItems, token, sellerToken, sellerLogout, customerLogout } = useContext(ShopContext);
+  const { getTotalCartItems, token, sellerToken, customerLogout } = useContext(ShopContext);
   const adminToken = localStorage.getItem("admin-token");
+  const deliveryToken = localStorage.getItem("delivery-token");
 
   return (
     <div className="navbar">
@@ -53,26 +54,9 @@ const Navbar = () => {
           </Link>
         )}
 
-        {sellerToken ? (
-          <>
-            <Link to='/seller-dashboard'>
-              <button className="dashboard-btn">Dashboard</button>
-            </Link>
-            <button onClick={sellerLogout} className="logout-btn">Logout</button>
-          </>
-        ) : (
-          <Link to='/seller-login'>
-            <button className="seller-btn">Seller Login</button>
-          </Link>
-        )}
-
-        {adminToken ? (
-          <Link to='/admin'>
-            <button className="admin-btn">Admin</button>
-          </Link>
-        ) : (
-          <Link to='/admin-login'>
-            <button className="admin-btn">Admin</button>
+        {token && (
+          <Link to='/my-orders'>
+          <button className="orders-btn">My Orders</button>
           </Link>
         )}
 

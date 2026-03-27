@@ -1,4 +1,4 @@
-.footer{
+.footer {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -6,19 +6,19 @@
     gap: 50px;
 }
 
-.footer-logo{
+.footer-logo {
     display: flex;
     align-items: center;
     gap: 20px;
 }
 
-.footer-logo p{
+.footer-logo p {
     color: #383833;
     font-size: 46px;
     font-weight: 700;
 }
 
-.footer-links{
+.footer-links {
     display: flex;
     list-style: none;
     gap: 50px;
@@ -26,23 +26,69 @@
     font-size: 20px;
 }
 
-.footer-links li{
-    cursor: pointer;
-}
+.footer-links li { cursor: pointer; }
+.footer-links li:hover { color: #ff4141; }
 
-.footer-social-icon{
-    display: flex;
-    gap: 20px;
-}
+.footer-social-icon { display: flex; gap: 20px; }
 
-.footer-icons-container{
+.footer-icons-container {
     padding: 10px;
     padding-bottom: 6px;
     background: #fbfbfb;
     border: 1px solid #ebebeb;
 }
 
-.footer-copyright{
+.footer-portal-links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.footer-portal-links p {
+    font-size: 14px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+.footer-portal-buttons {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.footer-portal-btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.footer-portal-btn.seller {
+    background: #ff4141;
+    color: white;
+}
+.footer-portal-btn.seller:hover { background: #e63939; transform: translateY(-2px); }
+
+.footer-portal-btn.delivery {
+    background: #f59e0b;
+    color: white;
+}
+.footer-portal-btn.delivery:hover { background: #d97706; transform: translateY(-2px); }
+
+.footer-portal-btn.admin {
+    background: #1a1a2e;
+    color: white;
+}
+.footer-portal-btn.admin:hover { background: #e94560; transform: translateY(-2px); }
+
+.footer-copyright {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -53,7 +99,7 @@
     font-size: 20px;
 }
 
-.footer-copyright hr{
+.footer-copyright hr {
     width: 80%;
     border: none;
     border-radius: 10px;

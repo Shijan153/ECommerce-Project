@@ -8,18 +8,17 @@ const ShopCategory = (props) => {
   const [loading, setLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState('default');
 
-const fetchProducts = useCallback(async () => {
-  try {
-    const response = await fetch(`http://localhost:5000/api/products?category=${props.category}`);
-    const data = await response.json();
-    console.log('Product data:', data.data); // Check if image_url exists
-    setProducts(data.data || []);
-  } catch (error) {
-    console.error('Error fetching products:', error);
-  } finally {
-    setLoading(false);
-  }
-}, [props.category]);
+  const fetchProducts = useCallback(async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/products?category=${props.category}`);
+      const data = await response.json();
+      setProducts(data.data || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [props.category]);
 
   useEffect(() => {
     fetchProducts();
@@ -36,16 +35,14 @@ const fetchProducts = useCallback(async () => {
     setProducts(sorted);
   };
 
-  if (loading) {
-    return <div className="loading">Loading products...</div>;
-  }
+  if (loading) return <div className="loading">Loading products...</div>;
 
   return (
     <div className="shop-category">
-      <img 
-        className="shopcategory-banner" 
-        src={props.banner} 
-        alt={`${props.category} banner`} 
+      <img
+        className="shopcategory-banner"
+        src={props.banner}
+        alt={`${props.category} banner`}
       />
 
       <div className="shopcategory-indexSort">
@@ -53,8 +50,8 @@ const fetchProducts = useCallback(async () => {
           <span>Showing 1-{Math.min(products.length, 12)}</span> out of {products.length} products
         </p>
         <div className="shopcategory-sort">
-          <select 
-            value={sortOrder} 
+          <select
+            value={sortOrder}
             onChange={(e) => sortProducts(e.target.value)}
             className="sort-select"
           >
@@ -73,7 +70,7 @@ const fetchProducts = useCallback(async () => {
               key={item.product_id}
               id={item.product_id}
               name={item.product_name}
-              image={item.image_url}
+              image={item.image_url ? `http://localhost:5000${item.image_url}` : null}
               new_price={item.product_price}
               old_price={item.old_price}
             />
@@ -82,7 +79,7 @@ const fetchProducts = useCallback(async () => {
           <p className="no-products">No products found in this category</p>
         )}
       </div>
-      
+
       {products.length > 12 && (
         <div className="shopcategory-loadmore">Load More</div>
       )}

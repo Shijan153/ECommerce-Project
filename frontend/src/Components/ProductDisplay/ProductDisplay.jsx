@@ -1,4 +1,4 @@
-import React, { useContext } from 'react'
+import React, { useContext, useState } from 'react'
 import './ProductDisplay.css'
 import star_icon from "../Assets/star_icon.png";
 import star_dull_icon from "../Assets/star_dull_icon.png";
@@ -7,10 +7,27 @@ import { ShopContext } from '../../Context/ShopContext';
 const ProductDisplay = (props) => {
     const { product } = props;
     const { addToCart } = useContext(ShopContext);
+    const [selectedSize, setSelectedSize] = useState('');
+    const [sizeError, setSizeError] = useState('');
 
     const imageUrl = product.image_url
         ? `http://localhost:5000${product.image_url}`
         : 'https://placehold.co/200x200';
+
+    const sizes = product.sizes
+        ? (Array.isArray(product.sizes) ? product.sizes : JSON.parse(product.sizes))
+        : [];
+
+    const handleAddToCart = () => {
+        if (sizes.length > 0 && !selectedSize) {
+            setSizeError('Please select a size');
+            return;
+        }
+        setSizeError('');
+        addToCart(product.product_id, selectedSize);
+    };
+
+    const avgStars = Math.round(parseFloat(product.average_rating) || 0);
 
     return (
         <div className='productdisplay'>
@@ -28,34 +45,47 @@ const ProductDisplay = (props) => {
             <div className="productdisplay-right">
                 <h1>{product.product_name}</h1>
                 <div className="productdisplay-right-star">
-                    <img src={star_icon} alt="" />
-                    <img src={star_icon} alt="" />
-                    <img src={star_icon} alt="" />
-                    <img src={star_icon} alt="" />
-                    <img src={star_dull_icon} alt="" />
+                    {[1,2,3,4,5].map(star => (
+                        <img key={star}
+                            src={star <= avgStars ? star_icon : star_dull_icon}
+                            alt=""
+                        />
+                    ))}
                     <p>({product.review_count || 0})</p>
                 </div>
                 <div className="productdisplay-right-prices">
-                    <div className="productdisplay-right-price-old">${product.old_price}</div>
+                    {product.old_price && (
+                        <div className="productdisplay-right-price-old">${product.old_price}</div>
+                    )}
                     <div className="productdisplay-right-price-new">${product.product_price}</div>
                 </div>
                 <div className="productdisplay-right-description">
                     {product.product_description}
                 </div>
-                <div className="productdisplay-right-size">
-                    <h1>Select Size</h1>
-                    <div className="productdisplay-right-sizes">
-                        {product.sizes
-                            ? JSON.parse(product.sizes).map((size) => (
-                                <div key={size}>{size}</div>
-                            ))
-                            : ['S', 'M', 'L', 'XL', 'XXL'].map((size) => (
-                                <div key={size}>{size}</div>
-                            ))
-                        }
+                {sizes.length > 0 && (
+                    <div className="productdisplay-right-size">
+                        <h1>Select Size</h1>
+                        <div className="productdisplay-right-sizes">
+                            {sizes.map((size) => (
+                                <div
+                                    key={size}
+                                    className={selectedSize === size ? 'size-selected' : ''}
+                                    onClick={() => {
+                                        setSelectedSize(size);
+                                        setSizeError('');
+                                    }}
+                                >
+                                    {size}
+                                </div>
+                            ))}
+                        </div>
+                        {sizeError && <p className="size-error">{sizeError}</p>}
+                        {selectedSize && (
+                            <p className="size-chosen">Selected: <strong>{selectedSize}</strong></p>
+                        )}
                     </div>
-                </div>
-                <button onClick={() => addToCart(product.product_id)}>ADD TO CART</button>
+                )}
+                <button onClick={handleAddToCart}>ADD TO CART</button>
                 <p className='productdisplay-right-category'>
                     <span>Category :</span> {product.category_name}
                 </p>

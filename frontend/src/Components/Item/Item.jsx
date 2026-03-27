@@ -3,33 +3,25 @@ import './Item.css'
 import { Link } from 'react-router-dom'
 
 const Item = (props) => {
-  // Make sure the image URL is correctly formatted
-  const imageUrl = props.image 
-    ? `http://localhost:5000${props.image}`
-    : 'https://via.placeholder.com/200';
-
-  console.log('Loading image from:', imageUrl); // Add this to debug
+  const imageUrl = props.image || 'https://placehold.co/200x200';
 
   return (
     <div className='item'>
-      <Link to={`/product/${props.id}`} onClick={() => window.scrollTo(0,0)}>
-        <img 
-          src={imageUrl} 
+      <Link to={`/product/${props.id}`} onClick={() => window.scrollTo(0, 0)}>
+        <img
+          src={imageUrl}
           alt={props.name}
-          onError={(e) => {
-            console.log('Image failed to load:', imageUrl);
-            e.target.src = 'https://via.placeholder.com/200';
-          }}
+          onError={e => { e.target.src = 'https://placehold.co/200x200'; }}
         />
       </Link>
       <p>{props.name}</p>
       <div className="item-prices">
         <div className="item-price-new">
-            ${props.new_price}
+          ${parseFloat(props.new_price).toFixed(2)}
         </div>
-        {props.old_price && (
+        {props.old_price && parseFloat(props.old_price) !== parseFloat(props.new_price) && (
           <div className="item-price-old">
-            ${props.old_price}
+            ${parseFloat(props.old_price).toFixed(2)}
           </div>
         )}
       </div>

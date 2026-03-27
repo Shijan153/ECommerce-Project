@@ -4,6 +4,7 @@ import footer_logo from '../Assets/logo_big.png'
 import instagram_icon from '../Assets/instagram_icon.png'
 import pintester_icon from '../Assets/pintester_icon.png'
 import whatsapp_icon from '../Assets/whatsapp_icon.png'
+import { Link } from 'react-router-dom'
 
 const Footer = () => {
   return (
@@ -30,9 +31,25 @@ const Footer = () => {
                 <img src={whatsapp_icon} alt="" />
             </div>
         </div>
+
+        <div className="footer-portal-links">
+            <p>Business & Operations</p>
+            <div className="footer-portal-buttons">
+                <Link to='/seller-login'>
+                    <button className="footer-portal-btn seller">Seller Login</button>
+                </Link>
+                <Link to='/delivery-login'>
+                    <button className="footer-portal-btn delivery">Deliveryman Login</button>
+                </Link>
+                <Link to='/admin-login'>
+                    <button className="footer-portal-btn admin">Admin Login</button>
+                </Link>
+            </div>
+        </div>
+
         <div className="footer-copyright">
             <hr />
-            <p>Copyright @ 2026 -All Right Reserved.</p>
+            <p>Copyright @ 2026 - All Right Reserved.</p>
         </div>
     </div>
   )

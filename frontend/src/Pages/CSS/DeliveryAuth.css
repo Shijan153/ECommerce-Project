@@ -1,0 +1,98 @@
+.delivery-auth-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Segoe UI', sans-serif;
+  padding: 20px;
+}
+
+.delivery-auth-box {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+}
+
+.delivery-auth-header { text-align: center; margin-bottom: 32px; }
+
+.delivery-icon { font-size: 48px; margin-bottom: 12px; }
+
+.delivery-auth-header h1 {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.delivery-auth-header p { color: rgba(255,255,255,0.5); font-size: 14px; }
+
+.delivery-auth-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.delivery-auth-fields input,
+.delivery-auth-fields select {
+  padding: 13px 16px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.delivery-auth-fields input::placeholder { color: rgba(255,255,255,0.4); }
+.delivery-auth-fields select option { background: #1a1a2e; color: #fff; }
+.delivery-auth-fields input:focus,
+.delivery-auth-fields select:focus { border-color: #e94560; }
+
+.delivery-error {
+  color: #ff6b6b;
+  font-size: 13px;
+  margin-bottom: 12px;
+  text-align: center;
+  background: rgba(255,107,107,0.1);
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.delivery-auth-box button {
+  width: 100%;
+  padding: 14px;
+  background: #e94560;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+}
+
+.delivery-auth-box button:hover:not(:disabled) { background: #c73652; transform: translateY(-1px); }
+.delivery-auth-box button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.delivery-toggle {
+  text-align: center;
+  color: rgba(255,255,255,0.5);
+  font-size: 14px;
+}
+
+.delivery-toggle span {
+  color: #e94560;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.delivery-toggle span:hover { text-decoration: underline; }

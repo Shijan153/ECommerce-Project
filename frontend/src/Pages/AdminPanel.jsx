@@ -11,6 +11,7 @@ const StatusBadge = ({ status }) => (
 const AdminPanel = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("admin-token");
+  const adminWarehouse = JSON.parse(localStorage.getItem("admin-warehouse") || "null");
 
   const [activeTab, setActiveTab] = useState("orders");
   const [orders, setOrders] = useState([]);
@@ -122,6 +123,9 @@ const AdminPanel = () => {
         <div className="admin-brand">
           <h2>Admin Panel</h2>
           <p>Shopper</p>
+          {adminWarehouse && (
+            <span className="admin-warehouse-tag">🏭 {adminWarehouse.warehouse_name}</span>
+          )}
         </div>
         <nav className="admin-nav">
           <button className={activeTab === "orders" ? "active" : ""} onClick={() => setActiveTab("orders")}>
