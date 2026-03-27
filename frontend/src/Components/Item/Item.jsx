@@ -3,7 +3,12 @@ import './Item.css'
 import { Link } from 'react-router-dom'
 
 const Item = (props) => {
-  const imageUrl = props.image || 'https://placehold.co/200x200';
+  // Make sure the image URL is correctly formatted
+  const imageUrl = props.image 
+    ? `http://localhost:5000${props.image}`
+    : 'https://via.placeholder.com/200';
+
+  console.log('Loading image from:', imageUrl); // Add this to debug
 
   return (
     <div className='item'>
@@ -11,15 +16,18 @@ const Item = (props) => {
         <img
           src={imageUrl}
           alt={props.name}
-          onError={e => { e.target.src = 'https://placehold.co/200x200'; }}
+          onError={(e) => {
+            console.log('Image failed to load:', imageUrl);
+            e.target.src = 'https://via.placeholder.com/200';
+          }}
         />
       </Link>
       <p>{props.name}</p>
       <div className="item-prices">
         <div className="item-price-new">
-          ${parseFloat(props.new_price).toFixed(2)}
+            ${props.new_price}
         </div>
-        {props.old_price && parseFloat(props.old_price) !== parseFloat(props.new_price) && (
+        {props.old_price && (
           <div className="item-price-old">
             ${parseFloat(props.old_price).toFixed(2)}
           </div>
