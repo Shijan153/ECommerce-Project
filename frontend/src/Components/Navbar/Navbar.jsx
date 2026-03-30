@@ -4,6 +4,7 @@ import logo from "../Assets/logo.png";
 import cart_icon from "../Assets/cart_icon.png";
 import { Link } from "react-router-dom";
 import { ShopContext } from "../../Context/ShopContext";
+import SearchBar from "./SearchBar";
 
 const Navbar = () => {
   const [menu, setMenu] = useState("shop");
@@ -45,6 +46,11 @@ const Navbar = () => {
         </li>
       </ul>
 
+      {/* ── Search Bar ── */}
+      <div className="nav-search">
+        <SearchBar />
+      </div>
+
       <div className="nav-login-cart">
         {token ? (
           <button onClick={customerLogout} className="logout-btn">Logout</button>
@@ -56,7 +62,7 @@ const Navbar = () => {
 
         {token && (
           <Link to='/my-orders'>
-          <button className="orders-btn">My Orders</button>
+            <button className="orders-btn">My Orders</button>
           </Link>
         )}
 

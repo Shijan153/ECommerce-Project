@@ -44,14 +44,19 @@ const CartItems = () => {
             {cartProducts.map((product) => {
                 const quantity = cartItems[product.product_id];
                 if (!quantity || quantity <= 0) return null;
-                const imageUrl = product.image_url
-                    ? `http://localhost:5000${product.image_url}`
-                    : 'https://placehold.co/200x200';
                 const selectedSize = cartSizes?.[product.product_id];
                 return (
                     <div key={product.product_id}>
                         <div className="cartitems-format cartitems-format-main">
-                            <img src={imageUrl} alt={product.product_name} className='carticon-product-icon' />
+                            <img
+                                src={product.image_url || 'https://placehold.co/200x200?text=No+Image'}
+                                alt={product.product_name}
+                                className='carticon-product-icon'
+                                onError={e => {
+                                    e.target.onerror = null;
+                                    e.target.src = 'https://placehold.co/200x200?text=No+Image';
+                                }}
+                            />
                             <div>
                                 <p>{product.product_name}</p>
                                 {selectedSize && (

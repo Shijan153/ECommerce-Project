@@ -16,6 +16,7 @@ import AdminPanel from './Pages/AdminPanel';
 import DeliveryAuth from './Pages/DeliveryAuth';
 import DeliveryDashboard from './Pages/DeliveryDashboard';
 import OrderTracking from './Pages/OrderTracking';
+import SearchResults from './Pages/SearchResults';   // ← NEW
 
 import men_banner from './Components/Assets/banner_mens.png';
 import women_banner from './Components/Assets/banner_women.png';
@@ -63,6 +64,7 @@ const Layout = () => {
         <Route path='/delivery-register' element={<DeliveryAuth />} />
         <Route path='/delivery-dashboard' element={<DeliveryDashboard />} />
         <Route path='/my-orders' element={<OrderTracking />} />
+        <Route path='/search' element={<SearchResults />} />  {/* ← NEW */}
       </Routes>
       {!hideNavbar && <Footer />}
     </>

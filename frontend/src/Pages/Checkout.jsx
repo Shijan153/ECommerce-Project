@@ -1,13 +1,14 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShopContext } from '../Context/ShopContext';
 import './CSS/Checkout.css';
 
 const Checkout = () => {
-  const { cartItems, cartSizes, allProducts, setCartItems } = useContext(ShopContext);
-  const token = useContext(ShopContext).token || localStorage.getItem('auth-token');
+  const { cartItems, cartSizes, allProducts, setCartItems, token } = useContext(ShopContext);
+  const authToken = token || localStorage.getItem('auth-token');
   const navigate = useNavigate();
 
+  const [cartLoaded, setCartLoaded] = useState(false);
   const [form, setForm] = useState({
     shipping_address: '',
     phone_number: '',
@@ -21,9 +22,16 @@ const Checkout = () => {
   const [promoApplied, setPromoApplied] = useState(false);
   const [discount, setDiscount] = useState(0);
 
-  const cartProductList = (allProducts || []).filter(
-    p => cartItems[p.product_id] > 0
-  );
+  // Wait until allProducts is populated before filtering
+  useEffect(() => {
+    if (allProducts.length > 0) {
+      setCartLoaded(true);
+    }
+  }, [allProducts]);
+
+  const cartProductList = cartLoaded
+    ? allProducts.filter(p => cartItems[p.product_id] > 0)
+    : [];
 
   const subtotal = cartProductList.reduce((sum, p) => {
     return sum + (parseFloat(p.product_price) * cartItems[p.product_id]);
@@ -57,7 +65,7 @@ const Checkout = () => {
   };
 
   const handlePlaceOrder = async () => {
-    if (!token) {
+    if (!authToken) {
       navigate('/login');
       return;
     }
@@ -86,7 +94,7 @@ const Checkout = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify({
           shipping_address: form.shipping_address,
@@ -217,7 +225,7 @@ const Checkout = () => {
           <button
             className="place-order-btn"
             onClick={handlePlaceOrder}
-            disabled={loading}
+            disabled={loading || !cartLoaded}
           >
             {loading ? 'Processing...' : paymentMethod === 'cod' ? 'Place Order' : 'Pay Now'}
           </button>
@@ -226,14 +234,20 @@ const Checkout = () => {
         <div className="checkout-right">
           <h3>Order Summary</h3>
           <div className="order-items">
-            {cartProductList.length === 0 ? (
+            {!cartLoaded ? (
+              <p style={{ color: '#888', fontSize: '14px' }}>Loading cart...</p>
+            ) : cartProductList.length === 0 ? (
               <p style={{ color: '#888', fontSize: '14px' }}>No items in cart</p>
             ) : (
               cartProductList.map(p => (
                 <div key={p.product_id} className="order-item">
                   <img
-                    src={p.image_url ? `http://localhost:5000${p.image_url}` : 'https://placehold.co/60x60'}
+                    src={p.image_url || 'https://placehold.co/60x60?text=No+Image'}
                     alt={p.product_name}
+                    onError={e => {
+                      e.target.onerror = null;
+                      e.target.src = 'https://placehold.co/60x60?text=No+Image';
+                    }}
                   />
                   <div className="order-item-info">
                     <p className="order-item-name">{p.product_name}</p>

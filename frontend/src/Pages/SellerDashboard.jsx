@@ -133,13 +133,16 @@ const SellerDashboard = () => {
                 sellerProducts.map(product => (
                   <div key={product.product_id} className="product-card">
                     <img
-                      src={`http://localhost:5000${product.image_url}`}
+                      src={product.image_url || 'https://placehold.co/200x200?text=No+Image'}
                       alt={product.product_name}
-                      onError={e => { e.target.src = 'https://placehold.co/200x200'; }}
+                      onError={e => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://placehold.co/200x200?text=No+Image';
+                      }}
                     />
                     <h3>{product.product_name}</h3>
                     <p>Price: ${parseFloat(product.product_price).toFixed(2)}</p>
-                    {product.old_price && (
+                    {product.old_price && parseFloat(product.old_price) > 0 && parseFloat(product.old_price) !== parseFloat(product.product_price) && (
                       <p style={{ textDecoration: 'line-through', color: '#888' }}>
                         Was: ${parseFloat(product.old_price).toFixed(2)}
                       </p>
