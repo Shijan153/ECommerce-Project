@@ -1,13 +1,17 @@
 .seller-auth {
     width: 100%;
     min-height: 100vh;
-    padding: 50px 0;
     background: #fce3fe;
     box-sizing: border-box;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 50px 20px;
 }
 
 .seller-auth-container {
-    width: 650px;
+    width: 100%;
+    max-width: 650px;
     background: white;
     margin: 0 auto;
     padding: 40px 60px;
@@ -131,6 +135,10 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .seller-auth {
+        padding: 20px 10px;
+    }
+    
     .seller-auth-container {
         width: 90%;
         padding: 30px 20px;

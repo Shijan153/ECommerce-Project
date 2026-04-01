@@ -138,17 +138,28 @@ const ShopContextProvider = (props) => {
     } catch { return { success: false, message: 'Network error' }; }
   };
 
-  const customerSignup = async (name, mobile, email, password) => {
+  const customerSignup = async (name, mobile, email, password, house_no, street, postal_code, city_id) => {
     try {
       const response = await fetch('http://localhost:5000/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, mobile, email, password })
+        body: JSON.stringify({
+          name,
+          mobile,
+          email,
+          password,
+          house_no,
+          street,
+          postal_code,
+          city_id: city_id ? parseInt(city_id) : null
+        })
       });
       const data = await response.json();
       if (response.ok) return { success: true };
       return { success: false, message: data.message };
-    } catch { return { success: false, message: 'Network error' }; }
+    } catch {
+      return { success: false, message: 'Network error' };
+    }
   };
 
   const customerLogout = () => {
@@ -186,28 +197,47 @@ const ShopContextProvider = (props) => {
           setSellerToken(sToken);
           return { success: true };
         }
-        return { success: false, message: 'No token in response' };
+        return { success: false, message: 'No token received from server' };
       }
       return { success: false, message: data.message || 'Login failed' };
-    } catch { return { success: false, message: 'Network error' }; }
+    } catch {
+      return { success: false, message: 'Network error' };
+    }
   };
 
-  const sellerSignup = async (storeName, email, password, name, phone_no) => {
+  // FIX: Parameter order now matches SellerAuth.jsx call:
+  // sellerSignup(name, phone, email, password, storeName, house_no, street, postal_code, city_id)
+  // Also sends all address fields to the backend.
+  const sellerSignup = async (name, phone, email, password, storeName, house_no, street, postal_code, city_id) => {
     try {
       const response = await fetch('http://localhost:5000/api/sellersignup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ store_name: storeName, email, password, name, phone_no })
+        body: JSON.stringify({
+          name,
+          phone_no: phone,
+          email,
+          password,
+          store_name: storeName,
+          house_no,
+          street,
+          postal_code,
+          city_id: city_id ? parseInt(city_id) : null
+        })
       });
       const data = await response.json();
       if (response.ok) {
         const sToken = data.data?.token || data.token;
-        localStorage.setItem('seller-token', sToken);
-        setSellerToken(sToken);
+        if (sToken) {
+          localStorage.setItem('seller-token', sToken);
+          setSellerToken(sToken);
+        }
         return { success: true };
       }
-      return { success: false, message: data.message };
-    } catch { return { success: false, message: 'Network error' }; }
+      return { success: false, message: data.message || 'Signup failed' };
+    } catch {
+      return { success: false, message: 'Network error' };
+    }
   };
 
   const sellerLogout = () => {

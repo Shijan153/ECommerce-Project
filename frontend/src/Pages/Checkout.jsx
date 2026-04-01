@@ -24,10 +24,14 @@ const Checkout = () => {
 
   // Wait until allProducts is populated before filtering
   useEffect(() => {
+    if (!authToken) {
+      navigate('/login');
+      return;
+    }
     if (allProducts.length > 0) {
       setCartLoaded(true);
     }
-  }, [allProducts]);
+  }, [allProducts, authToken, navigate]);
 
   const cartProductList = cartLoaded
     ? allProducts.filter(p => cartItems[p.product_id] > 0)

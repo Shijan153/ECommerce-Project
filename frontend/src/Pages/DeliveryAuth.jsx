@@ -1,127 +1,144 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./CSS/DeliveryAuth.css";
 
 const DeliveryAuth = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const emailRef = useRef(null);
   const [mode, setMode] = useState("login");
-  const [warehouses, setWarehouses] = useState([]);
+  const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({
-    name: "", email: "", phone: "",
-    password: "", vehicle_type: "", warehouse_id: ""
+    name: "", email: "", phone: "", password: "", vehicle_type: "",
+    house_no: "", street: "", postal_code: "", city_id: ""
   });
 
   useEffect(() => {
-    if (location.pathname === "/delivery-register") setMode("register");
-    else setMode("login");
-    fetchWarehouses();
+    localStorage.removeItem('auth-token');
+    localStorage.removeItem('seller-token');
+    localStorage.removeItem('admin-token');
+
+    setMode(location.pathname === "/delivery-register" ? "register" : "login");
+    setError("");
+    fetch("http://localhost:5000/api/cities")
+      .then(r => r.json())
+      .then(d => setCities(d.data || []))
+      .catch(() => {});
   }, [location.pathname]);
 
-  const fetchWarehouses = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/warehouses");
-      const data = await res.json();
-      setWarehouses(data.data || []);
-    } catch { }
-  };
+  useEffect(() => {
+    // Focus email input when component mounts or mode changes
+    if (emailRef.current) {
+      emailRef.current.focus();
+    }
+  }, [mode]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async () => {
     setError("");
+
     if (mode === "register") {
-      if (!form.name || !form.email || !form.password || !form.warehouse_id) {
-        setError("Please fill all required fields"); return;
+      if (!form.name || !form.email || !form.phone || !form.password || !form.vehicle_type ||
+          !form.house_no || !form.street || !form.postal_code || !form.city_id) {
+        setError("All fields are required.");
+        return;
+      }
+      if (!/^\d{11}$/.test(form.phone)) {
+        setError("Phone number must be exactly 11 digits.");
+        return;
+      }
+      if (form.password.length < 6) {
+        setError("Password must be at least 6 characters long.");
+        return;
       }
     } else {
       if (!form.email || !form.password) {
-        setError("Email and password required"); return;
+        setError("Email and password are required.");
+        return;
+      }
+      if (form.password.length < 6) {
+        setError("Password must be at least 6 characters long.");
+        return;
       }
     }
 
     setLoading(true);
     try {
-      const endpoint = mode === "register"
-        ? "http://localhost:5000/api/delivery/register"
-        : "http://localhost:5000/api/delivery/login";
-
-      const body = mode === "register"
-        ? { name: form.name, email: form.email, phone: form.phone,
-            password: form.password, vehicle_type: form.vehicle_type,
-            warehouse_id: Number(form.warehouse_id) }
-        : { email: form.email, password: form.password };
-
-      const res = await fetch(endpoint, {
+      const response = await fetch(`http://localhost:5000/api/delivery/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
+        body: JSON.stringify(form)
       });
-      const data = await res.json();
+      const data = await response.json();
 
-      if (res.ok) {
-        localStorage.setItem("delivery-token", data.data.token);
+      if (response.ok) {
+        const deliveryToken = data.data?.token || data.token;
+        if (deliveryToken) {
+          localStorage.setItem("delivery-token", deliveryToken);
+        }
         navigate("/delivery-dashboard");
       } else {
-        setError(data.message || "Failed");
+        setError(data.message || "Authentication failed. Please try again.");
       }
-    } catch { setError("Network error"); }
-    finally { setLoading(false); }
+    } catch {
+      setError("Network error. Please check your connection.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
+    // FIX: was "delivery-auth" — CSS defines ".delivery-auth-page" for the outer wrapper
     <div className="delivery-auth-page">
+      {/* FIX: was "delivery-auth-box" which is correct, but the parent class was wrong above */}
       <div className="delivery-auth-box">
-        <div className="delivery-auth-header">
-          <div className="delivery-icon">🚴</div>
-          <h1>{mode === "register" ? "Join as Delivery Partner" : "Delivery Login"}</h1>
-          <p>Shopper Delivery Network</p>
-        </div>
+        <h1>Delivery Partner {mode === "register" ? "Register" : "Login"}</h1>
 
         <div className="delivery-auth-fields">
           {mode === "register" && (
             <>
-              <input name="name" placeholder="Full Name *" value={form.name} onChange={handleChange} />
-              <input name="phone" placeholder="Phone Number" value={form.phone} onChange={handleChange} />
-            </>
-          )}
-          <input name="email" type="email" placeholder="Email Address *" value={form.email} onChange={handleChange} />
-          <input name="password" type="password" placeholder="Password *" value={form.password} onChange={handleChange} />
-
-          {mode === "register" && (
-            <>
+              <input name="name" value={form.name} placeholder="Full Name *" onChange={handleChange} />
+              <input name="phone" value={form.phone} placeholder="Phone" onChange={handleChange} />
               <select name="vehicle_type" value={form.vehicle_type} onChange={handleChange}>
-                <option value="">Select Vehicle Type</option>
+                <option value="">Vehicle Type</option>
                 <option value="bike">Bike</option>
                 <option value="bicycle">Bicycle</option>
                 <option value="van">Van</option>
                 <option value="car">Car</option>
               </select>
-              <select name="warehouse_id" value={form.warehouse_id} onChange={handleChange}>
-                <option value="">Select Warehouse *</option>
-                {warehouses.map(w => (
-                  <option key={w.warehouse_id} value={w.warehouse_id}>{w.warehouse_name}</option>
+              <input name="house_no" value={form.house_no} placeholder="House No" onChange={handleChange} />
+              <input name="street" value={form.street} placeholder="Street" onChange={handleChange} />
+              <input name="postal_code" value={form.postal_code} placeholder="Postal Code" onChange={handleChange} />
+              <select name="city_id" value={form.city_id} onChange={handleChange}>
+                <option value="">Select City</option>
+                {cities.map(c => (
+                  <option key={c.city_id} value={c.city_id}>{c.city_name}</option>
                 ))}
               </select>
             </>
           )}
+          <input ref={emailRef} name="email" value={form.email} placeholder="Email *" onChange={handleChange} />
+          <input name="password" value={form.password} type="password" placeholder="Password *" onChange={handleChange} />
         </div>
 
+        {/* FIX: was className="error" — CSS defines ".delivery-error" */}
         {error && <p className="delivery-error">{error}</p>}
 
         <button onClick={handleSubmit} disabled={loading}>
-          {loading ? "Please wait..." : mode === "register" ? "Register" : "Login"}
+          {loading
+            ? "Please wait..."
+            : mode === "register" ? "Register" : "Login"}
         </button>
 
         <p className="delivery-toggle">
-          {mode === "register" ? (
-            <>Already registered? <span onClick={() => navigate("/delivery-login")}>Login here</span></>
-          ) : (
-            <>New delivery partner? <span onClick={() => navigate("/delivery-register")}>Register here</span></>
-          )}
+          {mode === "register" ? "Already registered? " : "New delivery partner? "}
+          <span onClick={() => navigate(mode === "register" ? "/delivery-login" : "/delivery-register")}>
+            {mode === "register" ? "Login here" : "Create Account"}
+          </span>
         </p>
       </div>
     </div>

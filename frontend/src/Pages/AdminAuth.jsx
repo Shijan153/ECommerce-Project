@@ -1,33 +1,42 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./CSS/AdminAuth.css";
 
 const AdminAuth = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const emailRef = useRef(null);
   const [mode, setMode] = useState("login");
-  const [warehouses, setWarehouses] = useState([]);
+  const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", password: "", warehouse_id: ""
+    name: "", email: "", phone: "", password: "",
+    house_no: "", street: "", postal_code: "", city_id: ""
   });
 
   useEffect(() => {
-    if (location.pathname === "/admin-register") setMode("register");
-    else setMode("login");
-    fetchWarehouses();
+    localStorage.removeItem('auth-token');
+    localStorage.removeItem('seller-token');
+    localStorage.removeItem('delivery-token');
+
+    setMode(location.pathname === "/admin-register" ? "register" : "login");
+    setError("");
+    setSuccessMsg("");
+    fetch("http://localhost:5000/api/cities")
+      .then(r => r.json())
+      .then(d => setCities(d.data || []))
+      .catch(() => {});
   }, [location.pathname]);
 
-  const fetchWarehouses = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/warehouses");
-      const data = await res.json();
-      setWarehouses(data.data || []);
-    } catch { }
-  };
+  useEffect(() => {
+    // Focus email input when component mounts or mode changes
+    if (emailRef.current) {
+      emailRef.current.focus();
+    }
+  }, [mode]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -35,97 +44,142 @@ const AdminAuth = () => {
     setError("");
     setSuccessMsg("");
 
+    // Basic validation
     if (mode === "register") {
-      if (!form.name || !form.email || !form.password || !form.warehouse_id) {
-        setError("Name, email, password and warehouse are required"); return;
+      if (!form.name || !form.email || !form.phone || !form.password ||
+          !form.house_no || !form.street || !form.postal_code || !form.city_id) {
+        setError("All fields are required.");
+        return;
+      }
+      if (!/^\d{11}$/.test(form.phone)) {
+        setError("Phone number must be exactly 11 digits.");
+        return;
+      }
+      if (form.password.length < 6) {
+        setError("Password must be at least 6 characters long.");
+        return;
       }
     } else {
       if (!form.email || !form.password) {
-        setError("Email and password required"); return;
+        setError("Email and password are required.");
+        return;
+      }
+      if (form.password.length < 6) {
+        setError("Password must be at least 6 characters long.");
+        return;
       }
     }
 
     setLoading(true);
     try {
-      const endpoint = mode === "register"
-        ? "http://localhost:5000/api/admin/register"
-        : "http://localhost:5000/api/admin/login";
-
-      const body = mode === "register"
-        ? { name: form.name, email: form.email, phone: form.phone,
-            password: form.password, warehouse_id: Number(form.warehouse_id) }
-        : { email: form.email, password: form.password };
-
-      const res = await fetch(endpoint, {
+      const endpoint = mode === "register" ? "/api/admin/register" : "/api/admin/login";
+      const response = await fetch(`http://localhost:5000${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
+        body: JSON.stringify(form)
       });
-      const data = await res.json();
+      const data = await response.json();
 
-      if (res.ok) {
+      if (response.ok) {
+        // Both login and register return a token
+        const adminToken = data.data?.token || data.token;
+        if (adminToken) {
+          localStorage.setItem("admin-token", adminToken);
+        }
         if (mode === "register") {
-          setSuccessMsg(`Registration successful! — redirecting...`);
-          setTimeout(() => {
-            localStorage.setItem("admin-token", data.data.token);
-            localStorage.setItem("admin-warehouse", JSON.stringify({ warehouse_id: data.data.warehouse_id, warehouse_name: data.data.warehouse_name }));
-            navigate("/admin");
-          }, 2500);
+          // Show success then redirect
+          setSuccessMsg("Admin account created! Redirecting to panel...");
+          setTimeout(() => navigate("/admin"), 1500);
         } else {
-          localStorage.setItem("admin-token", data.data.token);
-          localStorage.setItem("admin-warehouse", JSON.stringify({ warehouse_id: data.data.warehouse_id, warehouse_name: data.data.warehouse_name }));
           navigate("/admin");
         }
       } else {
-        setError(data.message || "Failed");
+        setError(data.message || "Authentication failed. Please try again.");
       }
-    } catch { setError("Network error"); }
-    finally { setLoading(false); }
+    } catch {
+      setError("Network error. Please check your connection.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="admin-auth-page">
       <div className="admin-auth-box">
-        <div className="admin-auth-header">
-          <div className="admin-icon">🛡️</div>
-          <h1>{mode === "register" ? "Admin Registration" : "Admin Login"}</h1>
-          <p>Shopper Management System</p>
-        </div>
+        <h2>Admin {mode === "register" ? "Registration" : "Login"}</h2>
 
         <div className="admin-auth-fields">
           {mode === "register" && (
             <>
-              <input name="name" placeholder="Full Name *" value={form.name} onChange={handleChange} />
-              <input name="phone" placeholder="Phone Number" value={form.phone} onChange={handleChange} />
+              <input
+                name="name"
+                value={form.name}
+                placeholder="Admin Name *"
+                onChange={handleChange}
+              />
+              <input
+                name="phone"
+                value={form.phone}
+                placeholder="Phone Number"
+                onChange={handleChange}
+              />
+              <input
+                name="house_no"
+                value={form.house_no}
+                placeholder="House No"
+                onChange={handleChange}
+              />
+              <input
+                name="street"
+                value={form.street}
+                placeholder="Street"
+                onChange={handleChange}
+              />
+              <input
+                name="postal_code"
+                value={form.postal_code}
+                placeholder="Postal Code"
+                onChange={handleChange}
+              />
+              <select name="city_id" value={form.city_id} onChange={handleChange}>
+                <option value="">Select City</option>
+                {cities.map(c => (
+                  <option key={c.city_id} value={c.city_id}>{c.city_name}</option>
+                ))}
+              </select>
             </>
           )}
-
-          <input name="email" type="email" placeholder="Email Address *" value={form.email} onChange={handleChange} />
-          <input name="password" type="password" placeholder="Password *" value={form.password} onChange={handleChange} />
-
-          {mode === "register" && (
-            <select name="warehouse_id" value={form.warehouse_id} onChange={handleChange}>
-              <option value="">Select Warehouse *</option>
-              {warehouses.map(w => (
-                <option key={w.warehouse_id} value={w.warehouse_id}>{w.warehouse_name}</option>
-              ))}
-            </select>
-          )}
+          <input
+            ref={emailRef}
+            name="email"
+            value={form.email}
+            type="email"
+            placeholder="Email *"
+            onChange={handleChange}
+          />
+          <input
+            name="password"
+            value={form.password}
+            type="password"
+            placeholder="Password *"
+            onChange={handleChange}
+          />
         </div>
 
+        {/* FIX: was "admin-auth-error", now correctly named */}
         {error && <p className="admin-auth-error">{error}</p>}
         {successMsg && <p className="admin-auth-success">{successMsg}</p>}
 
         <button onClick={handleSubmit} disabled={loading}>
-          {loading ? "Please wait..." : mode === "register" ? "Register" : "Login"}
+          {loading ? "Please wait..." : mode === "register" ? "Create Account" : "Login"}
         </button>
 
+        {/* FIX: was className="admin-toggle" (undefined in CSS) → now "admin-auth-toggle" */}
         <p className="admin-auth-toggle">
-          {mode === "register" ? (
-            <>Already registered? <span onClick={() => navigate("/admin-login")}>Login here</span></>
-          ) : (
-            <>New admin? <span onClick={() => navigate("/admin-register")}>Register here</span></>
-          )}
+          {mode === "register" ? "Already an admin? " : "Need an admin account? "}
+          <span onClick={() => navigate(mode === "register" ? "/admin-login" : "/admin-register")}>
+            {mode === "register" ? "Login" : "Create Account"}
+          </span>
         </p>
       </div>
     </div>

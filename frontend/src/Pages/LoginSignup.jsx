@@ -9,30 +9,58 @@ const LoginSignup = () => {
   const { customerLogin, customerSignup } = useContext(ShopContext);
 
   const [mode, setMode] = useState("signup");
+
+  // Basic fields
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
+
+  // Address fields
+  const [houseNo, setHouseNo] = useState("");
+  const [street, setStreet] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [cityId, setCityId] = useState("");
+  const [cities, setCities] = useState([]);
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (location.pathname === "/login") {
-      setMode("login");
-    } else if (location.pathname === "/signup") {
-      setMode("signup");
-    }
+    // clear role tokens when accessing customer login/signup so role switch is always explicit
+    localStorage.removeItem('seller-token');
+    localStorage.removeItem('admin-token');
+    localStorage.removeItem('delivery-token');
+
+    if (location.pathname === "/login") setMode("login");
+    else if (location.pathname === "/signup") setMode("signup");
   }, [location.pathname]);
 
-  const handleSubmit = async () => {
+  // Fetch cities when in signup mode
+  useEffect(() => {
     if (mode === "signup") {
-      if (!name || !mobile || !email || !password) {
-        setError("Please fill all fields");
+      fetch("http://localhost:5000/api/cities")
+        .then(res => res.json())
+        .then(data => setCities(data.data || []))
+        .catch(() => setCities([]));
+    }
+  }, [mode]);
+
+  const handleSubmit = async () => {
+    setError("");
+
+    if (mode === "signup") {
+      if (!name || !mobile || !email || !password || !houseNo || !street || !postalCode || !cityId) {
+        setError("Please fill all required fields");
         return;
       }
-      if (!/^\d{10}$/.test(mobile)) {
-        setError("Mobile number must be 10 digits");
+      if (!/^\d{11}$/.test(mobile)) {
+        setError("Mobile number must be exactly 11 digits");
+        return;
+      }
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters long");
         return;
       }
       if (!agreeTerms) {
@@ -44,14 +72,20 @@ const LoginSignup = () => {
         setError("Email and password are required");
         return;
       }
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters long");
+        return;
+      }
     }
 
     setLoading(true);
-    setError("");
 
     try {
       if (mode === "signup") {
-        const result = await customerSignup(name, mobile, email, password);
+        const result = await customerSignup(
+          name, mobile, email, password,
+          houseNo, street, postalCode, cityId
+        );
         if (result.success) {
           navigate("/login");
         } else {
@@ -78,17 +112,19 @@ const LoginSignup = () => {
         <h1>{mode === "signup" ? "Sign Up" : "Login"}</h1>
 
         <div className="loginsignup-fields">
+
+          {/* ── Basic Info ── */}
           {mode === "signup" && (
             <>
               <input
                 type="text"
-                placeholder="Your Name"
+                placeholder="Your Name *"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
               <input
                 type="tel"
-                placeholder="Mobile Number"
+                placeholder="Mobile Number *"
                 value={mobile}
                 onChange={(e) => setMobile(e.target.value)}
               />
@@ -97,17 +133,58 @@ const LoginSignup = () => {
 
           <input
             type="email"
-            placeholder="Email Address"
+            placeholder="Email Address *"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
 
           <input
             type="password"
-            placeholder="Password"
+            placeholder="Password *"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+
+          {/* ── Address Fields (signup only, all mandatory) ── */}
+          {mode === "signup" && (
+            <>
+              <p className="loginsignup-section-label">Address</p>
+
+              <input
+                type="text"
+                placeholder="House No * (e.g. H-01)"
+                value={houseNo}
+                onChange={(e) => setHouseNo(e.target.value)}
+              />
+
+              <input
+                type="text"
+                placeholder="Street / Area *"
+                value={street}
+                onChange={(e) => setStreet(e.target.value)}
+              />
+
+              <input
+                type="text"
+                placeholder="Postal Code *"
+                value={postalCode}
+                onChange={(e) => setPostalCode(e.target.value)}
+              />
+
+              <select
+                value={cityId}
+                onChange={(e) => setCityId(e.target.value)}
+                className="loginsignup-select"
+              >
+                <option value="">Select City *</option>
+                {cities.map(city => (
+                  <option key={city.city_id} value={city.city_id}>
+                    {city.city_name}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
         </div>
 
         <button onClick={handleSubmit} disabled={loading}>

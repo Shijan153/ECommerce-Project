@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
 import "./CSS/SellerAuth.css";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ShopContext } from "../Context/ShopContext";
@@ -7,62 +7,105 @@ const SellerAuth = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { sellerLogin, sellerSignup } = useContext(ShopContext);
+  const emailRef = useRef(null);
 
   const [mode, setMode] = useState("signup");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [storeName, setStoreName] = useState("");
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
+  const [formData, setFormData] = useState({
+    name: "", phone: "", email: "", password: "", storeName: "",
+    house_no: "", street: "", postal_code: "", city_id: ""
+  });
+  const [cities, setCities] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
 
   useEffect(() => {
+    localStorage.removeItem('auth-token');
+    localStorage.removeItem('admin-token');
+    localStorage.removeItem('delivery-token');
+
     if (location.pathname === "/seller-login") setMode("login");
-    else if (location.pathname === "/seller-signup") setMode("signup");
+    else setMode("signup");
+
+    fetch("http://localhost:5000/api/cities")
+      .then(res => res.json())
+      .then(data => setCities(data.data || []))
+      .catch(() => {});
   }, [location.pathname]);
 
+  useEffect(() => {
+    // Focus email input when component mounts or mode changes
+    if (emailRef.current) {
+      emailRef.current.focus();
+    }
+  }, [mode]);
+
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
   const handleSubmit = async () => {
+    setError("");
+
     if (mode === "signup") {
-      if (!name || !phone || !email || !password || !storeName) {
-        setError("Please fill all fields"); return;
+      if (!formData.name || !formData.phone || !formData.email || !formData.password || !formData.storeName ||
+          !formData.house_no || !formData.street || !formData.postal_code || !formData.city_id) {
+        setError("All fields are required.");
+        return;
       }
-      if (!/^\d{10,11}$/.test(phone)) {
-        setError("Phone number must be 10-11 digits"); return;
+      if (!/^\d{11}$/.test(formData.phone)) {
+        setError("Phone number must be exactly 11 digits.");
+        return;
       }
-      if (password.length < 6) {
-        setError("Password must be at least 6 characters"); return;
+      if (formData.password.length < 6) {
+        setError("Password must be at least 6 characters long.");
+        return;
       }
       if (!agreeTerms) {
-        setError("Please agree to the terms and conditions"); return;
+        setError("Please agree to the terms and conditions.");
+        return;
       }
     } else {
-      if (!loginEmail || !loginPassword) {
-        setError("Email and password are required"); return;
+      if (!formData.email || !formData.password) {
+        setError("Email and password are required.");
+        return;
+      }
+      if (formData.password.length < 6) {
+        setError("Password must be at least 6 characters long.");
+        return;
       }
     }
 
     setLoading(true);
-    setError("");
-
     try {
-      let result;
+      // FIX: use result.success / result.message instead of try/catch on throw
+      // because sellerLogin/sellerSignup return {success, message} objects, never throw.
       if (mode === "signup") {
-        result = await sellerSignup(storeName, email, password, name, phone);
+        const result = await sellerSignup(
+          formData.name,
+          formData.phone,
+          formData.email,
+          formData.password,
+          formData.storeName,
+          formData.house_no,
+          formData.street,
+          formData.postal_code,
+          formData.city_id
+        );
+        if (result.success) {
+          navigate("/seller-dashboard");
+        } else {
+          setError(result.message || "Signup failed. Please try again.");
+        }
       } else {
-        result = await sellerLogin(loginEmail, loginPassword);
+        const result = await sellerLogin(formData.email, formData.password);
+        if (result.success) {
+          navigate("/seller-dashboard");
+        } else {
+          setError(result.message || "Login failed. Check your credentials.");
+        }
       }
-
-      if (result.success) {
-        navigate("/seller-dashboard");
-      } else {
-        setError(result.message);
-      }
-    } catch {
-      setError("Something went wrong");
+    } catch (err) {
+      // Genuine unexpected errors (e.g. context not available)
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -71,52 +114,56 @@ const SellerAuth = () => {
   return (
     <div className="seller-auth">
       <div className="seller-auth-container">
-        <h1>{mode === "signup" ? "Create Seller Account" : "Seller Login"}</h1>
-        {mode === "signup" && <p className="seller-auth-subtitle">Start selling on Shopper today!</p>}
+        <h1>{mode === "signup" ? "Become a Seller" : "Seller Login"}</h1>
 
         <div className="seller-auth-fields">
-          {mode === "signup" ? (
+          {mode === "signup" && (
             <>
-              <input type="text" placeholder="Full Name *" value={name} onChange={e => setName(e.target.value)} />
-              <input type="tel" placeholder="Phone Number *" value={phone} onChange={e => setPhone(e.target.value)} />
-              <input type="email" placeholder="Email Address *" value={email} onChange={e => setEmail(e.target.value)} />
-              <input type="password" placeholder="Password *" value={password} onChange={e => setPassword(e.target.value)} />
-              <input type="text" placeholder="Store Name *" value={storeName} onChange={e => setStoreName(e.target.value)} />
-            </>
-          ) : (
-            <>
-              <input type="email" placeholder="Seller Email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} />
-              <input type="password" placeholder="Password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} />
+              <input name="name" placeholder="Full Name *" value={formData.name} onChange={handleChange} />
+              <input name="storeName" placeholder="Store Name *" value={formData.storeName} onChange={handleChange} />
+              <input name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleChange} />
+              <div className="address-fields">
+                <input name="house_no" placeholder="House No" value={formData.house_no} onChange={handleChange} />
+                <input name="street" placeholder="Street" value={formData.street} onChange={handleChange} />
+                <input name="postal_code" placeholder="Postal Code" value={formData.postal_code} onChange={handleChange} />
+                <select name="city_id" value={formData.city_id} onChange={handleChange}>
+                  <option value="">Select City</option>
+                  {cities.map(c => (
+                    <option key={c.city_id} value={c.city_id}>{c.city_name}</option>
+                  ))}
+                </select>
+              </div>
             </>
           )}
+          <input ref={emailRef} name="email" type="email" placeholder="Email *" value={formData.email} onChange={handleChange} />
+          <input name="password" type="password" placeholder="Password *" value={formData.password} onChange={handleChange} />
         </div>
+
+        {mode === "signup" && (
+          <div className="seller-auth-agree">
+            <input
+              type="checkbox"
+              checked={agreeTerms}
+              onChange={() => setAgreeTerms(!agreeTerms)}
+            />
+            <p>I agree to the <span>Terms of Use &amp; Privacy Policy</span>.</p>
+          </div>
+        )}
 
         <button onClick={handleSubmit} disabled={loading}>
           {loading
-            ? mode === "signup" ? "Creating Account..." : "Logging in..."
-            : mode === "signup" ? "Create Account" : "Login"}
+            ? (mode === "signup" ? "Creating Account..." : "Logging in...")
+            : (mode === "signup" ? "Create Account" : "Login")}
         </button>
 
         {error && <p className="error-text">{error}</p>}
 
-        {mode === "signup" && (
-          <div className="seller-auth-agree">
-            <input type="checkbox" checked={agreeTerms} onChange={e => setAgreeTerms(e.target.checked)} />
-            <p>I agree to the <span>terms of use</span> & <span>privacy policy</span></p>
-          </div>
-        )}
-
-        {mode === "signup" ? (
-          <p className="seller-auth-toggle">
-            Already have a seller account?{" "}
-            <span onClick={() => navigate("/seller-login")}>Login here</span>
-          </p>
-        ) : (
-          <p className="seller-auth-toggle">
-            Want to sell on Shopper?{" "}
-            <span onClick={() => navigate("/seller-signup")}>Create seller account</span>
-          </p>
-        )}
+        <p className="seller-auth-toggle">
+          {mode === "signup" ? "Already have an account? " : "New seller? "}
+          <span onClick={() => navigate(mode === "signup" ? "/seller-login" : "/seller-signup")}>
+            {mode === "signup" ? "Login here" : "Create Account"}
+          </span>
+        </p>
       </div>
     </div>
   );

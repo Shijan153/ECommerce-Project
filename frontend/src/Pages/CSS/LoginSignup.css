@@ -118,3 +118,41 @@
         font-size: 18px;
     }
 }
+
+.loginsignup-section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 8px;
+}
+
+.loginsignup-select {
+  width: 100%;
+  padding: 15px 20px;
+  border: 1px solid #c9c9c9;
+  outline: none;
+  color: #5c5c5c;
+  font-size: 14px;
+  border-radius: 4px;
+}
+
+.loginsignup-section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 8px;
+}
+
+.loginsignup-select {
+  width: 100%;
+  padding: 15px 20px;
+  border: 1px solid #c9c9c9;
+  outline: none;
+  color: #5c5c5c;
+  font-size: 14px;
+  border-radius: 4px;
+}

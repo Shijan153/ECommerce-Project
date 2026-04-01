@@ -65,9 +65,6 @@ const ProductDisplay = (props) => {
                         ${parseFloat(product.product_price).toFixed(2)}
                     </div>
                 </div>
-                <div className="productdisplay-right-description">
-                    {product.product_description}
-                </div>
                 {sizes.length > 0 && (
                     <div className="productdisplay-right-size">
                         <h1>Select Size</h1>

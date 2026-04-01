@@ -33,9 +33,9 @@ const Product = () => {
     <div>
       <Breadcrum product={product} />
       <ProductDisplay product={product} />
-      <DescriptionBox />
+      <DescriptionBox description={product.product_description} />
       <ProductReviews productId={productId} />
-      <RelatedProducts />
+      <RelatedProducts productId={product.product_id} category={product.category_name} />
     </div>
   );
 };
