@@ -20,7 +20,6 @@ const SellerAuth = () => {
   const [agreeTerms, setAgreeTerms] = useState(false);
 
   useEffect(() => {
-    // Clear ALL tokens when entering seller auth pages
     localStorage.removeItem('auth-token');
     localStorage.removeItem('seller-token');
     localStorage.removeItem('admin-token');
@@ -36,7 +35,6 @@ const SellerAuth = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    // Focus email input when component mounts or mode changes
     if (emailRef.current) {
       emailRef.current.focus();
     }
@@ -78,8 +76,6 @@ const SellerAuth = () => {
 
     setLoading(true);
     try {
-      // FIX: use result.success / result.message instead of try/catch on throw
-      // because sellerLogin/sellerSignup return {success, message} objects, never throw.
       if (mode === "signup") {
         const result = await sellerSignup(
           formData.name,
@@ -106,7 +102,6 @@ const SellerAuth = () => {
         }
       }
     } catch (err) {
-      // Genuine unexpected errors (e.g. context not available)
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
@@ -166,6 +161,9 @@ const SellerAuth = () => {
             {mode === "signup" ? "Login here" : "Create Account"}
           </span>
         </p>
+        <div className="home-action">
+          <button className="home-link" onClick={() => navigate("/")}>Home</button>
+        </div>
       </div>
     </div>
   );

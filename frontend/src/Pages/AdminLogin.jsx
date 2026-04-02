@@ -21,7 +21,6 @@ const AdminLogin = () => {
       const data = await response.json();
       if (response.ok) {
         localStorage.setItem("admin-token", data.data.token);
-        // ← Number() ensures JS comparisons work correctly
         localStorage.setItem("admin-warehouse", JSON.stringify({
           warehouse_id: Number(data.data.warehouse_id),
           warehouse_name: data.data.warehouse_name || `Warehouse ${data.data.warehouse_id}`
@@ -49,6 +48,9 @@ const AdminLogin = () => {
         <p className="create-account-link">
           Don't have an ID? <span onClick={() => navigate("/admin-register")}>Create Admin Account</span>
         </p>
+        <div className="home-action">
+          <button className="home-link" onClick={() => navigate("/")}>Home</button>
+        </div>
       </div>
     </div>
   );

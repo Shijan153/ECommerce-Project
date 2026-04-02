@@ -197,7 +197,7 @@ const OrderTracking = () => {
                         {order.items?.filter(i => i.product_id).map((item, idx) => (
                           <div key={idx} className="ot-item-row">
                             <img
-                              src={item.image_url ? `http://localhost:5000${item.image_url}` : 'https://placehold.co/50x50'}
+                              src={item.image_url || 'https://placehold.co/50x50'}
                               alt={item.product_name}
                             />
                             <div>

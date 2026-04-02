@@ -21,7 +21,7 @@ const AdminAuth = () => {
     localStorage.removeItem('auth-token');
     localStorage.removeItem('seller-token');
     localStorage.removeItem('admin-token');
-    localStorage.removeItem('admin-warehouse'); // ← ADDED
+    localStorage.removeItem('admin-warehouse');
     localStorage.removeItem('delivery-token');
 
     setMode(location.pathname === "/admin-register" ? "register" : "login");
@@ -84,7 +84,6 @@ const AdminAuth = () => {
         if (adminToken) {
           localStorage.setItem("admin-token", adminToken);
         }
-        // ← ADDED: persist warehouse so AdminPanel can do warehouse-based UI logic
         if (adminData.warehouse_id) {
           localStorage.setItem("admin-warehouse", JSON.stringify({
             warehouse_id: Number(adminData.warehouse_id),
@@ -143,6 +142,9 @@ const AdminAuth = () => {
             {mode === "register" ? "Login" : "Create Account"}
           </span>
         </p>
+        <div className="home-action">
+          <button className="home-link" onClick={() => navigate("/")}>Home</button>
+        </div>
       </div>
     </div>
   );

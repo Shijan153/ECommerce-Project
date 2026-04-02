@@ -120,23 +120,28 @@ const DeliveryDashboard = () => {
                 {orders.map(order => (
                   <div key={order.order_id} className={`del-order-card ${order.order_status}`}>
                     <div className="del-order-header">
-                      <strong>Order #{order.order_id}</strong>
+                      <div>
+                        <strong>Order #{order.order_id}</strong>
+                        <div style={{fontSize: '13px', color: '#666', marginTop: '4px'}}>
+                          👤 {order.customer_name || 'Customer'}
+                        </div>
+                      </div>
                       <StatusBadge status={order.order_status} />
                     </div>
 
                     <div className="del-order-body">
-                      <div className="del-order-info">
-                        <p>📍 <strong>{order.shipping_address}</strong></p>
-                        <p>📞 {order.phone_number}</p>
-                        <p>💰 ${parseFloat(order.total_amount).toFixed(2)} — {order.payment_method === 'cod' ? 'Cash on Delivery' : 'Paid Online'}</p>
-                        {order.order_notes && <p>📝 {order.order_notes}</p>}
-                      </div>
+                    <div className="del-order-info">
+                      <p>📍 <strong>{order.customer_address || order.shipping_address || 'No address provided'}</strong></p>
+                      <p>📞 {order.customer_phone || order.phone_number || 'No phone provided'}</p>
+                      <p>💰 ${parseFloat(order.total_amount).toFixed(2)} — {order.payment_method === 'cod' ? 'Cash on Delivery' : 'Paid Online'}</p>
+                      {order.order_notes && <p>📝 {order.order_notes}</p>}
+                    </div>
 
                       <div className="del-order-items">
                         {order.items?.filter(i => i.product_id).map((item, idx) => (
                           <div key={idx} className="del-item-row">
                             <img
-                              src={item.image_url ? `http://localhost:5000${item.image_url}` : 'https://placehold.co/40x40'}
+                              src={item.image_url || 'https://placehold.co/40x40'}
                               alt={item.product_name}
                             />
                             <span>{item.product_name} × {item.quantity}

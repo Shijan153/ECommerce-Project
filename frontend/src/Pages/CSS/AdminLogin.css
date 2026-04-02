@@ -10,26 +10,23 @@
 .admin-login-box {
   background: #16213e;
   border-radius: 16px;
-  padding: 48px 40px;
+  padding: 48px 40px 40px 40px;
   width: 100%;
   max-width: 400px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.4);
   border: 1px solid #0f3460;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.admin-login-header {
-  text-align: center;
-  margin-bottom: 32px;
-}
-
-.admin-login-header h1 {
+.admin-login-box h1 {
   font-size: 28px;
   font-weight: 800;
   color: #e94560;
-  margin-bottom: 6px;
+  margin: 0 0 28px 0;
+  text-align: center;
 }
-
-.admin-login-header p { color: #8892a4; font-size: 14px; }
 
 .admin-login-fields {
   display: flex;
@@ -51,9 +48,15 @@
 
 .admin-login-fields input::placeholder { color: #8892a4; }
 .admin-login-fields input:focus { border-color: #e94560; }
-.admin-error { color: #e94560; font-size: 13px; margin-bottom: 14px; text-align: center; }
 
-.admin-login-box button {
+.admin-error {
+  color: #e94560;
+  font-size: 13px;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.admin-login-box button:not(.home-link) {
   width: 100%;
   padding: 14px;
   background: #e94560;
@@ -64,7 +67,61 @@
   font-weight: 700;
   cursor: pointer;
   transition: background 0.2s;
+  margin-bottom: 16px;
 }
 
-.admin-login-box button:hover:not(:disabled) { background: #c73652; }
-.admin-login-box button:disabled { opacity: 0.6; cursor: not-allowed; }
+.admin-login-box button:not(.home-link):hover:not(:disabled) { background: #c73652; }
+.admin-login-box button:not(.home-link):disabled { opacity: 0.6; cursor: not-allowed; }
+
+.create-account-link {
+  text-align: center;
+  color: #8892a4;
+  font-size: 14px;
+  margin: 0 0 0 0;
+}
+
+.create-account-link span {
+  color: #e94560;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.create-account-link span:hover { text-decoration: underline; }
+
+/* ── Home button ── */
+.home-action {
+  margin-top: 18px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.home-link {
+  background: transparent !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  box-shadow: none !important;
+  margin-bottom: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: opacity 0.2s;
+}
+
+.home-link::before {
+  content: "🏠";
+  font-size: 1.1em;
+}
+
+.home-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+  background: transparent !important;
+}

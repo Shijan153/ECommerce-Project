@@ -66,7 +66,7 @@
   border-radius: 8px;
 }
 
-.delivery-auth-box button {
+.delivery-auth-box button:not(.home-link) {
   width: 100%;
   padding: 14px;
   background: #e94560;
@@ -80,8 +80,68 @@
   margin-bottom: 16px;
 }
 
+.home-link {
+  background: transparent !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  box-shadow: none !important;
+}
+
+.home-link:hover {
+  text-decoration: underline;
+  background: transparent !important;
+}
+
 .delivery-auth-box button:hover:not(:disabled) { background: #c73652; transform: translateY(-1px); }
 .delivery-auth-box button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.back-shopper {
+  width: 100%;
+  padding: 12px;
+  margin-top: 0;
+  background: #ffffff;
+  color: #1a1a2e;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.back-shopper:hover { background: #f4f4f4; }
+
+.home-action {
+  margin-top: 16px;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  justify-content: center;
+}
+
+.home-link {
+  background: transparent !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  box-shadow: none !important;
+}
+
+.home-link:hover {
+  text-decoration: underline;
+  background: transparent !important;
+}
 
 .delivery-toggle {
   text-align: center;
@@ -96,3 +156,35 @@
 }
 
 .delivery-toggle span:hover { text-decoration: underline; }
+
+.home-action {
+  margin-top: 14px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+..home-link {
+  background: transparent !important;
+  border: none !important;
+  color: #ff0000 !important;
+  font-weight: 700;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  line-height: 1;
+}
+
+.home-link::before {
+  content: "🏠";
+  font-size: 1.1em;
+  margin-right: 0.3rem;
+}
+
+.home-link:hover {
+  text-decoration: underline;
+  background: transparent !important;
+}

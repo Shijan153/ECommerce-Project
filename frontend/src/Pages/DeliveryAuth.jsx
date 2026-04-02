@@ -142,6 +142,9 @@ const DeliveryAuth = () => {
             {mode === "register" ? "Login here" : "Create Account"}
           </span>
         </p>
+        <div className="home-action">
+          <button className="home-link" onClick={() => navigate("/")}>Home</button>
+        </div>
       </div>
     </div>
   );

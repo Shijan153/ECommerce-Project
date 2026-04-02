@@ -84,7 +84,7 @@ const OrderConfirmation = () => {
                 {order.items.map((item, index) => (
                   <div key={index} className="confirmation-item">
                     <img
-                      src={item.image_url ? `http://localhost:5000${item.image_url}` : 'https://placehold.co/50x50'}
+                      src={item.image_url || 'https://placehold.co/50x50'}
                       alt={item.product_name}
                     />
                     <div>
