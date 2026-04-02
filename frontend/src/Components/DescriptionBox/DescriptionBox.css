@@ -15,6 +15,14 @@
     width: 171px;
     height: 70px;
     border: 1px solid #d0d0d0;
+    cursor: pointer;
+}
+
+.descriptionbox-nav-box.active{
+    color: #111;
+    background: #fff;
+    border-bottom: 1px solid white;
+    font-weight: 700;
 }
 
 .descriptionbox-nav-box.fade{

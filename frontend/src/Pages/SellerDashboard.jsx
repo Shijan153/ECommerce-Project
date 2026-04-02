@@ -16,6 +16,10 @@ const SellerDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [error, setError] = useState('');
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [editForm, setEditForm] = useState({ product_stock: '', sizes: [] });
+  const [availableSizes, setAvailableSizes] = useState(['S', 'M', 'L', 'XL', 'XXL']);
+  const [selectedSizes, setSelectedSizes] = useState({ S: false, M: false, L: false, XL: false, XXL: false });
   const hasFetched = useRef(false);
   const navigate = useNavigate();
 
@@ -58,8 +62,9 @@ const SellerDashboard = () => {
         body: JSON.stringify({ order_status })
       });
       const data = await res.json();
-      if (res.ok) setOrders(prev => prev.map(o => o.order_id === order_id ? { ...o, order_status } : o));
-      else setError(data.message);
+      if (res.ok) {
+        await fetchOrders(); // Refetch to ensure sync
+      } else setError(data.message);
     } catch { setError('Failed to update status'); }
   };
 
@@ -72,11 +77,23 @@ const SellerDashboard = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        setOrders(prev => prev.map(o =>
-          o.order_id === order_id ? { ...o, forwarded_to_admin: true, order_status: 'confirmed' } : o
-        ));
+        await fetchOrders(); // Refetch to ensure sync
       } else setError(data.message);
     } catch { setError('Failed to forward order'); }
+  };
+
+  const handleSendToWarehouse = async (order_id) => {
+    if (!window.confirm('Send this order to your warehouse?')) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/seller/orders/${order_id}/send-to-warehouse`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        await fetchOrders(); // Refetch to ensure sync
+      } else setError(data.message);
+    } catch { setError('Failed to send to warehouse'); }
   };
 
   const handleLogout = () => {
@@ -88,6 +105,88 @@ const SellerDashboard = () => {
     if (!sizes) return [];
     if (Array.isArray(sizes)) return sizes;
     try { return JSON.parse(sizes); } catch { return []; }
+  };
+
+  const isProductElectronics = (product) => {
+    const category = (product?.category_name || product?.category || '').toLowerCase();
+    return category === 'electronics';
+  };
+
+  const handleEditProduct = (product) => {
+    setEditingProduct(product.product_id);
+    const isElectronics = isProductElectronics(product);
+    const sizesArray = isElectronics ? [] : parseSizes(product.sizes);
+    setEditForm({
+      product_stock: product.product_stock || '',
+      sizes: sizesArray
+    });
+
+    if (isElectronics) {
+      setSelectedSizes({ S: false, M: false, L: false, XL: false, XXL: false });
+    } else {
+      const sizesStatus = { S: false, M: false, L: false, XL: false, XXL: false };
+      sizesArray.forEach(size => {
+        if (sizesStatus.hasOwnProperty(size)) {
+          sizesStatus[size] = true;
+        }
+      });
+      setSelectedSizes(sizesStatus);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingProduct(null);
+    setEditForm({ product_stock: '', sizes: [] });
+  };
+
+  const handleUpdateInventory = async () => {
+    if (!editingProduct) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/seller/products/${editingProduct}/inventory`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          product_stock: parseInt(editForm.product_stock) || 0,
+          sizes: editForm.sizes
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        fetchSellerProducts();
+        setEditingProduct(null);
+        setEditForm({ product_stock: '', sizes: [] });
+      } else {
+        setError(data.message || 'Failed to update inventory');
+      }
+    } catch {
+      setError('Failed to update inventory');
+    }
+  };
+
+  const handleSizeToggle = (size) => {
+    setEditForm(prev => ({
+      ...prev,
+      sizes: prev.sizes.includes(size)
+        ? prev.sizes.filter(s => s !== size)
+        : [...prev.sizes, size]
+    }));
+  };
+
+  const handleAddCustomSize = () => {
+    const customSize = prompt('Enter custom size:');
+    if (customSize && customSize.trim() && !editForm.sizes.includes(customSize.trim())) {
+      setEditForm(prev => ({
+        ...prev,
+        sizes: [...prev.sizes, customSize.trim()]
+      }));
+    }
+  };
+
+  const handleRemoveSize = (sizeToRemove) => {
+    setEditForm(prev => ({
+      ...prev,
+      sizes: prev.sizes.filter(s => s !== sizeToRemove)
+    }));
   };
 
   if (!sellerToken) return <div>Please login as seller</div>;
@@ -147,15 +246,74 @@ const SellerDashboard = () => {
                         Was: ${parseFloat(product.old_price).toFixed(2)}
                       </p>
                     )}
-                    <p>Stock: {product.product_stock}</p>
-                    <p>Category: {product.category_name}</p>
-                    {parseSizes(product.sizes).length > 0 && (
-                      <div className="product-sizes">
-                        <span>Sizes: </span>
-                        {parseSizes(product.sizes).map(size => (
-                          <span key={size} className="size-tag">{size}</span>
-                        ))}
+                    {editingProduct === product.product_id ? (
+                      <div className="edit-inventory-form">
+                        <label>Stock:</label>
+                        <input
+                          type="number"
+                          value={editForm.product_stock}
+                          onChange={(e) => setEditForm({ ...editForm, product_stock: e.target.value })}
+                          min="0"
+                        />
+                        {(!(!product.category_name && !product.category) && !isProductElectronics(product)) && (
+                          <>
+                            <label>Sizes:</label>
+                            <div className="sizes-management">
+                              <div className="available-sizes">
+                                <p>Available Sizes:</p>
+                                <div className="size-options">
+                                  {availableSizes.map(size => (
+                                    <label key={size} className="size-option">
+                                      <input
+                                        type="checkbox"
+                                        checked={editForm.sizes.includes(size)}
+                                        onChange={() => handleSizeToggle(size)}
+                                      />
+                                      {size}
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="custom-sizes">
+                                <p>Selected Sizes:</p>
+                                <div className="selected-sizes">
+                                  {editForm.sizes.map(size => (
+                                    <span key={size} className="selected-size-tag">
+                                      {size}
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveSize(size)}
+                                        className="remove-size-btn"
+                                      >×</button>
+                                    </span>
+                                  ))}
+                                </div>
+                                <button type="button" onClick={handleAddCustomSize} className="add-custom-size-btn">
+                                  + Add Custom Size
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        <div className="edit-buttons">
+                          <button onClick={handleUpdateInventory}>Update</button>
+                          <button onClick={handleCancelEdit}>Cancel</button>
+                        </div>
                       </div>
+                    ) : (
+                      <>
+                        <p>Stock: {product.product_stock}</p>
+                        <p>Category: {product.category_name}</p>
+                        {parseSizes(product.sizes).length > 0 && (
+                          <div className="product-sizes">
+                            <span>Sizes: </span>
+                            {parseSizes(product.sizes).map(size => (
+                              <span key={size} className="size-tag">{size}</span>
+                            ))}
+                          </div>
+                        )}
+                        <button className="edit-btn" onClick={() => handleEditProduct(product)}>Edit Inventory</button>
+                      </>
                     )}
                   </div>
                 ))
@@ -196,7 +354,10 @@ const SellerDashboard = () => {
                         <td>
                           <div className="order-items-list">
                             {order.items?.filter(i => i.product_id).map((item, idx) => (
-                              <div key={idx} className="order-item-row">{item.product_name} × {item.quantity}</div>
+                              <div key={idx} className="order-item-row">
+                                {item.product_name} × {item.quantity}
+                                {item.selected_size && <span className="item-size"> (Size: {item.selected_size})</span>}
+                              </div>
                             ))}
                           </div>
                         </td>
@@ -209,10 +370,10 @@ const SellerDashboard = () => {
                         </td>
                         <td>
                           <StatusBadge status={order.order_status} />
-                          {order.forwarded_to_admin && <div className="forwarded-tag">✓ Sent to Admin</div>}
+                          {(order.order_status === 'sent_seller_wh' || order.order_status === 'forwarded_to_admin') && <div className="forwarded-tag">✓ Sent to Admin</div>}
                         </td>
                         <td>
-                          {!order.forwarded_to_admin ? (
+                          {['pending','confirmed','sent_seller_wh','forwarded_to_admin'].includes(order.order_status) ? (
                             <div className="action-buttons">
                               {order.order_status === 'pending' && (
                                 <>
@@ -221,11 +382,11 @@ const SellerDashboard = () => {
                                 </>
                               )}
                               {order.order_status === 'confirmed' && (
-                                <button className="forward-btn" onClick={() => handleForwardToAdmin(order.order_id)}>Forward to Admin</button>
+                                <button className="warehouse-btn" onClick={() => handleSendToWarehouse(order.order_id)}>Send to Warehouse</button>
                               )}
                             </div>
                           ) : (
-                            <span className="done-text">Awaiting delivery</span>
+                            <span className="done-text">Processing by Admin</span>
                           )}
                         </td>
                       </tr>

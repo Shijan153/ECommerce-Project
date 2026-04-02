@@ -29,7 +29,7 @@ const StarSelector = ({ value, onChange }) => {
   );
 };
 
-const ProductReviews = ({ productId }) => {
+const ProductReviews = ({ productId, onReviewCountUpdate, visible = true }) => {
   const { token } = useContext(ShopContext);
   const authToken = token || localStorage.getItem('auth-token');
 
@@ -53,9 +53,12 @@ const ProductReviews = ({ productId }) => {
     try {
       const res = await fetch(`http://localhost:5000/api/reviews/product/${productId}`);
       const data = await res.json();
-      setReviews(data.data || []);
+      const reviewList = data.data || [];
+      setReviews(reviewList);
+      if (onReviewCountUpdate) onReviewCountUpdate(reviewList.length);
     } catch (err) {
       console.error('Error fetching reviews:', err);
+      if (onReviewCountUpdate) onReviewCountUpdate(0);
     } finally {
       setLoading(false);
     }
@@ -117,7 +120,7 @@ const ProductReviews = ({ productId }) => {
   };
 
   return (
-    <div className="product-reviews">
+    <div className="product-reviews" style={{ display: visible ? 'block' : 'none' }}>
       <div className="reviews-header">
         <h2>Customer Reviews</h2>
         {reviews.length > 0 && (

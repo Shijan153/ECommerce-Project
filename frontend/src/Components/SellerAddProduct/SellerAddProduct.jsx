@@ -28,6 +28,12 @@ const SellerAddProduct = ({ onProductAdded }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setProductData({ ...productData, [name]: value });
+
+    // Clear sizes when category changes to electronics
+    if (name === "category" && value === "electronics") {
+      setProductData(prev => ({ ...prev, [name]: value, sizes: [] }));
+      setSelectedSizes({ S: false, M: false, L: false, XL: false, XXL: false });
+    }
   };
 
   const handleSizeChange = (size) => {
@@ -63,7 +69,7 @@ const SellerAddProduct = ({ onProductAdded }) => {
       formData.append("old_price", productData.old_price);
       formData.append("description", productData.description);
       formData.append("stock", productData.stock);
-      formData.append("sizes", JSON.stringify(productData.sizes));
+      formData.append("sizes", JSON.stringify(productData.category === "electronics" ? [] : productData.sizes));
       formData.append("image", imageFile);
 
       const token = localStorage.getItem("seller-token");
@@ -116,6 +122,7 @@ const SellerAddProduct = ({ onProductAdded }) => {
             <option value="women">Women</option>
             <option value="kids">Kids</option>
             <option value="electronics">Electronics</option>
+            <option value="sports">Sports</option>
           </select>
         </div>
 
@@ -140,26 +147,28 @@ const SellerAddProduct = ({ onProductAdded }) => {
           <textarea name="description" value={productData.description} onChange={handleInputChange} rows="4" required />
         </div>
 
-        <div className="form-group">
-          <label>Sizes:</label>
-          <div className="size-checkboxes">
-            {["S", "M", "L", "XL", "XXL"].map((size) => (
-              <label key={size}>
-                <input
-                  type="checkbox"
-                  checked={selectedSizes[size]}
-                  onChange={() => handleSizeChange(size)}
-                />
-                {size}
-              </label>
-            ))}
-          </div>
-          {productData.sizes.length > 0 && (
-            <div className="selected-sizes-preview">
-              Selected: {productData.sizes.join(", ")}
+        {productData.category !== "electronics" && (
+          <div className="form-group">
+            <label>Sizes:</label>
+            <div className="size-checkboxes">
+              {["S", "M", "L", "XL", "XXL"].map((size) => (
+                <label key={size}>
+                  <input
+                    type="checkbox"
+                    checked={selectedSizes[size]}
+                    onChange={() => handleSizeChange(size)}
+                  />
+                  {size}
+                </label>
+              ))}
             </div>
-          )}
-        </div>
+            {productData.sizes.length > 0 && (
+              <div className="selected-sizes-preview">
+                Selected: {productData.sizes.join(", ")}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="form-group">
           <label>Product Image:</label>

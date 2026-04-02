@@ -137,6 +137,176 @@
 .product-card h3 { padding: 15px 15px 5px; margin: 0; font-size: 18px; color: #333; }
 .product-card p { padding: 0 15px 10px; margin: 0; color: #666; }
 
+.edit-btn {
+  margin: 10px 15px;
+  padding: 8px 16px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.edit-btn:hover { background: #0056b3; }
+
+.edit-inventory-form {
+  padding: 15px;
+  background: #f8f9fa;
+  border-top: 1px solid #ddd;
+}
+
+.edit-inventory-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.edit-inventory-form input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.sizes-management {
+  margin-top: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 15px;
+  background: white;
+}
+
+.available-sizes p, .custom-sizes p {
+  margin: 0 0 10px 0;
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.size-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.size-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #f9f9f9;
+  transition: all 0.2s;
+}
+
+.size-option:hover {
+  background: #f0f0f0;
+  border-color: #bbb;
+}
+
+.size-option input[type="checkbox"] {
+  margin: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.selected-sizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+  min-height: 30px;
+}
+
+.selected-size-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #007bff;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.remove-size-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 0;
+  margin-left: 2px;
+  line-height: 1;
+}
+
+.remove-size-btn:hover {
+  color: #ffcccc;
+}
+
+.add-custom-size-btn {
+  padding: 6px 12px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.add-custom-size-btn:hover {
+  background: #218838;
+}
+
+.item-size {
+  color: #666;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.edit-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-buttons button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.edit-buttons button:first-child {
+  background: #28a745;
+  color: white;
+}
+
+.edit-buttons button:first-child:hover { background: #218838; }
+
+.edit-buttons button:last-child {
+  background: #6c757d;
+  color: white;
+}
+
+.edit-buttons button:last-child:hover { background: #545b62; }
+
 .product-sizes {
   padding: 0 15px 10px;
   display: flex;
@@ -246,6 +416,8 @@
 .seller-status-assigned { background: #e0e7ff; color: #3730a3; }
 .seller-status-delivered { background: #dcfce7; color: #14532d; }
 .seller-status-on_the_way { background: #fed7aa; color: #9a3412; }
+.seller-status-sent_to_seller_warehouse { background: #fef3c7; color: #92400e; }
+.seller-status-sent_to_customer_warehouse { background: #fed7aa; color: #9a3412; }
 
 .forwarded-tag { font-size: 11px; color: #16a34a; font-weight: 600; margin-top: 4px; }
 .action-buttons { display: flex; flex-direction: column; gap: 6px; }
@@ -286,4 +458,18 @@
   white-space: nowrap;
 }
 .forward-btn:hover { background: #6d28d9; }
+
+.warehouse-btn {
+  padding: 6px 12px;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.warehouse-btn:hover { background: #d97706; }
+
 .done-text { font-size: 13px; color: #888; font-style: italic; }

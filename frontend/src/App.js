@@ -36,7 +36,15 @@ const Layout = () => {
     adminToken;
   const isDeliveryDashboard = location.pathname.startsWith('/delivery-dashboard') && deliveryToken;
 
-  const hideNavbar = isSellerDashboard || isAdminPanel || isDeliveryDashboard;
+  // Hide navbar for auth pages and dashboards
+  const isAuthPage = location.pathname === '/seller-login' ||
+                     location.pathname === '/seller-signup' ||
+                     location.pathname === '/admin-login' ||
+                     location.pathname === '/admin-register' ||
+                     location.pathname === '/delivery-login' ||
+                     location.pathname === '/delivery-register';
+
+  const hideNavbar = isSellerDashboard || isAdminPanel || isDeliveryDashboard || isAuthPage;
 
   return (
     <>

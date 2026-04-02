@@ -20,7 +20,9 @@ const SellerAuth = () => {
   const [agreeTerms, setAgreeTerms] = useState(false);
 
   useEffect(() => {
+    // Clear ALL tokens when entering seller auth pages
     localStorage.removeItem('auth-token');
+    localStorage.removeItem('seller-token');
     localStorage.removeItem('admin-token');
     localStorage.removeItem('delivery-token');
 

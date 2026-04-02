@@ -10,8 +10,6 @@ const Checkout = () => {
 
   const [cartLoaded, setCartLoaded] = useState(false);
   const [form, setForm] = useState({
-    shipping_address: '',
-    phone_number: '',
     promo_code: '',
     order_notes: ''
   });
@@ -73,14 +71,6 @@ const Checkout = () => {
       navigate('/login');
       return;
     }
-    if (!form.shipping_address.trim()) {
-      setError('Shipping address is required');
-      return;
-    }
-    if (!form.phone_number.trim()) {
-      setError('Phone number is required');
-      return;
-    }
     if (cartProductList.length === 0) {
       setError('Your cart is empty');
       return;
@@ -101,8 +91,6 @@ const Checkout = () => {
           'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify({
-          shipping_address: form.shipping_address,
-          phone_number: form.phone_number,
           order_notes: form.order_notes,
           total_amount: total.toFixed(2),
           items: buildOrderItems()
@@ -137,27 +125,7 @@ const Checkout = () => {
           <h2 className="checkout-title">Checkout</h2>
 
           <div className="checkout-section">
-            <h3>Shipping Information</h3>
-            <div className="form-group">
-              <label>Shipping Address *</label>
-              <textarea
-                name="shipping_address"
-                value={form.shipping_address}
-                onChange={handleChange}
-                placeholder="House no, Road no, Area, City"
-                rows={3}
-              />
-            </div>
-            <div className="form-group">
-              <label>Phone Number *</label>
-              <input
-                type="tel"
-                name="phone_number"
-                value={form.phone_number}
-                onChange={handleChange}
-                placeholder="+880 1XXXXXXXXX"
-              />
-            </div>
+            <h3>Order Notes</h3>
             <div className="form-group">
               <label>Order Notes (Optional)</label>
               <textarea

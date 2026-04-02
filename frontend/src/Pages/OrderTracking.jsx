@@ -3,11 +3,13 @@ import { ShopContext } from '../Context/ShopContext';
 import { useNavigate } from 'react-router-dom';
 import './CSS/OrderTracking.css';
 
-const STATUS_STEPS = ['pending', 'confirmed', 'assigned', 'picked', 'on_the_way', 'delivered'];
+const STATUS_STEPS = ['pending', 'confirmed', 'sent_seller_wh', 'sent_customer_wh', 'assigned', 'picked', 'on_the_way', 'delivered'];
 
 const STATUS_INFO = {
   pending:    { label: 'Order Placed',     icon: '📦', color: '#f59e0b' },
   confirmed:  { label: 'Confirmed',        icon: '✅', color: '#3b82f6' },
+  sent_seller_wh: { label: 'Sent to Seller Warehouse', icon: '🏭', color: '#8b5cf6' },
+  sent_customer_wh: { label: 'Sent to Customer Warehouse', icon: '🚚', color: '#f97316' },
   assigned:   { label: 'Delivery Assigned',icon: '🚴', color: '#8b5cf6' },
   picked:     { label: 'Picked Up',        icon: '📬', color: '#f97316' },
   on_the_way: { label: 'On The Way',       icon: '🛵', color: '#06b6d4' },
@@ -22,6 +24,9 @@ const OrderTracking = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expandedOrder, setExpandedOrder] = useState(null);
+  const [reviewingItem, setReviewingItem] = useState(null);
+  const [reviewForm, setReviewForm] = useState({ rating: 0, description: '' });
+  const [productReviews, setProductReviews] = useState({});
 
   useEffect(() => {
     if (!token) { navigate('/login'); return; }
@@ -44,6 +49,52 @@ const OrderTracking = () => {
 
   const toggleExpand = (order_id) => {
     setExpandedOrder(prev => prev === order_id ? null : order_id);
+  };
+
+  const fetchProductReviews = async (product_id) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/reviews/product/${product_id}`);
+      const data = await res.json();
+      if (res.ok) setProductReviews(prev => ({ ...prev, [product_id]: data.data || [] }));
+    } catch (err) {
+      console.error('Error fetching product reviews:', err);
+    }
+  };
+
+  const handleReviewItem = (item) => {
+    setReviewingItem(item);
+    setReviewForm({ rating: 0, description: '' });
+  };
+
+  const handleCancelReview = () => {
+    setReviewingItem(null);
+    setReviewForm({ rating: 0, description: '' });
+  };
+
+  const handleSubmitReview = async () => {
+    if (!reviewingItem || reviewForm.rating === 0) return;
+    try {
+      const res = await fetch('http://localhost:5000/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          product_id: reviewingItem.product_id,
+          star: reviewForm.rating,
+          description: reviewForm.description
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setReviewingItem(null);
+        setReviewForm({ rating: 0, description: '' });
+        // refresh review list for this product
+        if (reviewingItem?.product_id) fetchProductReviews(reviewingItem.product_id);
+      } else {
+        setError(data.message || 'Failed to submit review');
+      }
+    } catch {
+      setError('Failed to submit review');
+    }
   };
 
   if (loading) return (
@@ -104,24 +155,27 @@ const OrderTracking = () => {
                 {/* Progress Bar */}
                 {!isCancelled && (
                   <div className="ot-progress">
-                    {STATUS_STEPS.map((step, idx) => {
-                      const info = STATUS_INFO[step];
-                      const isCompleted = idx <= currentStep;
-                      const isActive = idx === currentStep;
-                      return (
-                        <React.Fragment key={step}>
-                          <div className={`ot-step ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}`}>
-                            <div className="ot-step-circle" style={isCompleted ? { background: info.color } : {}}>
-                              {isCompleted ? info.icon : <span>{idx + 1}</span>}
+                    <div className="ot-steps-container">
+                      {STATUS_STEPS.map((step, idx) => {
+                        const info = STATUS_INFO[step];
+                        const isCompleted = idx <= currentStep;
+                        const isActive = idx === currentStep;
+                        return (
+                          <React.Fragment key={step}>
+                            <div className={`ot-step ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}`}>
+                              <div className="ot-step-circle" style={isCompleted ? { background: info.color } : {}}>
+                                {isCompleted ? info.icon : <span>{idx + 1}</span>}
+                              </div>
+                              <p className="ot-step-label">{info.label}</p>
+                              {isActive && <div className="ot-active-indicator">Currently Here</div>}
                             </div>
-                            <p className="ot-step-label">{info.label}</p>
-                          </div>
-                          {idx < STATUS_STEPS.length - 1 && (
-                            <div className={`ot-step-line ${idx < currentStep ? 'completed' : ''}`}></div>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
+                            {idx < STATUS_STEPS.length - 1 && (
+                              <div className={`ot-step-line ${idx < currentStep ? 'completed' : ''}`}></div>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 
@@ -150,12 +204,64 @@ const OrderTracking = () => {
                               <p>{item.product_name}</p>
                               <p>Qty: {item.quantity} × ${parseFloat(item.price).toFixed(2)}</p>
                               {item.selected_size && <p className="ot-size">Size: {item.selected_size}</p>}
+                              {order.order_status === 'delivered' && (
+                              <>
+                                <button className="ot-review-btn" onClick={() => {
+                                  handleReviewItem(item);
+                                  fetchProductReviews(item.product_id);
+                                }}>
+                                  Write Review
+                                </button>
+                                <button className="ot-review-btn" onClick={() => fetchProductReviews(item.product_id)}>
+                                  Load Review Section
+                                </button>
+                              </>
+                            )}
+
+                            {productReviews[item.product_id] && productReviews[item.product_id].length > 0 && (
+                              <div className="ot-local-review-section">
+                                <h5>Reviews for {item.product_name}</h5>
+                                {productReviews[item.product_id].map((rv, idx) => (
+                                  <div key={idx} className="ot-local-review-card">
+                                    <div><strong>{rv.customer_name || 'Anonymous'}</strong> ({new Date(rv.review_date).toLocaleDateString()})</div>
+                                    <div>⭐ {rv.star} / 5</div>
+                                    {rv.description && <div>{rv.description}</div>}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                             </div>
                             <strong>${(item.quantity * parseFloat(item.price)).toFixed(2)}</strong>
                           </div>
                         ))}
                       </div>
                     </div>
+
+                    {/* Review Form */}
+                    {reviewingItem && (
+                      <div className="ot-review-form">
+                        <h4>Review {reviewingItem.product_name}</h4>
+                        <div className="ot-rating-stars">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <span
+                              key={star}
+                              className={star <= reviewForm.rating ? 'star filled' : 'star empty'}
+                              onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                            >★</span>
+                          ))}
+                        </div>
+                        <textarea
+                          placeholder="Write your review..."
+                          value={reviewForm.description}
+                          onChange={(e) => setReviewForm({ ...reviewForm, description: e.target.value })}
+                          rows="3"
+                        />
+                        <div className="ot-review-buttons">
+                          <button onClick={handleSubmitReview}>Submit Review</button>
+                          <button onClick={handleCancelReview}>Cancel</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

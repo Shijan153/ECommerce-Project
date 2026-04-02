@@ -10,6 +10,8 @@ const Product = () => {
   const { productId } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('description');
+  const [reviewCount, setReviewCount] = useState(0);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -33,8 +35,17 @@ const Product = () => {
     <div>
       <Breadcrum product={product} />
       <ProductDisplay product={product} />
-      <DescriptionBox description={product.product_description} />
-      <ProductReviews productId={productId} />
+      <DescriptionBox
+        description={product.product_description}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        reviewCount={reviewCount}
+      />
+      <ProductReviews
+        productId={productId}
+        onReviewCountUpdate={setReviewCount}
+        visible={activeTab === 'reviews'}
+      />
       <RelatedProducts productId={product.product_id} category={product.category_name} />
     </div>
   );

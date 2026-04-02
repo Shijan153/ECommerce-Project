@@ -2,10 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./CSS/AdminPanel.css";
 
-const STATUS_OPTIONS = ["pending","confirmed","assigned","picked","on_the_way","delivered","cancelled"];
-
 const StatusBadge = ({ status }) => (
-  <span className={`status-badge status-${status}`}>{status?.replace("_", " ")}</span>
+  <span className={`status-badge status-${status}`}>{status?.replace(/_/g, " ")}</span>
 );
 
 const AdminPanel = () => {
@@ -30,12 +28,11 @@ const AdminPanel = () => {
     "Authorization": `Bearer ${token}`
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!token) { navigate("/admin-login"); return; }
     fetchOrders();
     fetchDeliveryMen();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchOrders = async () => {
     try {
@@ -55,19 +52,36 @@ const AdminPanel = () => {
     } catch { setError("Failed to fetch delivery men"); }
   };
 
-  const handleAssign = async (order_id, deliveryman_id) => {
+  const handleSendToCustomerWarehouse = async (order_id) => {
+    if (!window.confirm("Send this order to the customer's warehouse?")) return;
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/admin/orders/${order_id}/send-to-customer-warehouse`,
+        { method: "PUT", headers }
+      );
+      const data = await res.json();
+      if (res.ok) fetchOrders();
+      else setError(data.message);
+    } catch { setError("Failed to send to customer warehouse"); }
+  };
+
+  const handleAssignDeliveryman = async (order_id, deliveryman_id) => {
     if (!deliveryman_id) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/orders/${order_id}/assign`, {
-        method: "PUT", headers,
-        body: JSON.stringify({ deliveryman_id: Number(deliveryman_id) })
-      });
+      const res = await fetch(
+        `http://localhost:5000/api/admin/orders/${order_id}/assign`,
+        { method: "PUT", headers, body: JSON.stringify({ deliveryman_id: Number(deliveryman_id) }) }
+      );
       const data = await res.json();
       if (res.ok) {
         setOrders(prev => prev.map(o =>
           o.order_id === order_id
-            ? { ...o, deliveryman_id: Number(deliveryman_id), order_status: "assigned",
-                deliveryman_name: deliveryMen.find(d => d.deliveryman_id === Number(deliveryman_id))?.name }
+            ? {
+                ...o,
+                deliveryman_id: Number(deliveryman_id),
+                order_status: "assigned",
+                deliveryman_name: deliveryMen.find(d => d.deliveryman_id === Number(deliveryman_id))?.name
+              }
             : o
         ));
       } else setError(data.message);
@@ -76,10 +90,10 @@ const AdminPanel = () => {
 
   const handleStatusChange = async (order_id, order_status) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/orders/${order_id}/status`, {
-        method: "PUT", headers,
-        body: JSON.stringify({ order_status })
-      });
+      const res = await fetch(
+        `http://localhost:5000/api/admin/orders/${order_id}/status`,
+        { method: "PUT", headers, body: JSON.stringify({ order_status }) }
+      );
       const data = await res.json();
       if (res.ok) {
         setOrders(prev => prev.map(o =>
@@ -112,8 +126,34 @@ const AdminPanel = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("admin-token");
+    localStorage.removeItem("admin-warehouse");
     navigate("/admin-login");
   };
+
+  // ── Delivery Man dropdown ──────────────────────────────────────────────────
+  const DeliverySelect = ({ order }) => (
+    deliveryMen.length === 0
+      ? <span className="ready-text">No delivery men available.</span>
+      : (
+        <>
+          <select
+            className="assign-select"
+            value={order.deliveryman_id || ""}
+            onChange={e => handleAssignDeliveryman(order.order_id, e.target.value)}
+          >
+            <option value="">-- Select Delivery Man --</option>
+            {deliveryMen.map(dm => (
+              <option key={dm.deliveryman_id} value={dm.deliveryman_id}>
+                {dm.name} ({dm.vehicle_type || "N/A"})
+              </option>
+            ))}
+          </select>
+          {order.deliveryman_name && (
+            <div className="assigned-name">✓ {order.deliveryman_name}</div>
+          )}
+        </>
+      )
+  );
 
   if (loading) return <div className="admin-loading">Loading...</div>;
 
@@ -139,75 +179,121 @@ const AdminPanel = () => {
       </div>
 
       <div className="admin-content">
-        {error && <div className="admin-error-banner" onClick={() => setError("")}>{error} ✕</div>}
+        {error && (
+          <div className="admin-error-banner" onClick={() => setError("")}>{error} ✕</div>
+        )}
 
         {activeTab === "orders" && (
           <div className="admin-section">
             <div className="section-header">
               <h2>All Orders</h2>
               <span className="count-badge">{orders.length} orders</span>
+              <button className="add-btn" style={{ marginLeft: "auto" }} onClick={fetchOrders}>
+                ↻ Refresh
+              </button>
             </div>
+
             <div className="orders-table-wrap">
               <table className="admin-table">
                 <thead>
                   <tr>
                     <th>Order ID</th>
-                    <th>Customer</th>
                     <th>Amount</th>
                     <th>Payment</th>
                     <th>Status</th>
-                    <th>Assign Delivery</th>
-                    <th>Update Status</th>
+                    <th>Warehouse Action</th>
+                    <th>Delivery Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map(order => (
-                    <tr key={order.order_id}>
-                      <td><strong>#{order.order_id}</strong></td>
-                      <td>
-                        <div>{order.phone_number}</div>
-                        <div className="sub-text">{order.shipping_address?.substring(0, 30)}...</div>
-                      </td>
-                      <td><strong>${parseFloat(order.total_amount).toFixed(2)}</strong></td>
-                      <td>
-                        <span className={`payment-badge ${order.payment_status}`}>
-                          {order.payment_method} / {order.payment_status}
-                        </span>
-                      </td>
-                      <td><StatusBadge status={order.order_status} /></td>
-                      <td>
-                        <select
-                          className="assign-select"
-                          value={order.deliveryman_id || ""}
-                          onChange={e => handleAssign(order.order_id, e.target.value)}
-                        >
-                          <option value="">-- Select --</option>
-                          {deliveryMen.map(dm => (
-                            <option key={dm.deliveryman_id} value={dm.deliveryman_id}>
-                              {dm.name} ({dm.vehicle_type || "N/A"})
-                            </option>
-                          ))}
-                        </select>
-                        {order.deliveryman_name && (
-                          <div className="assigned-name">✓ {order.deliveryman_name}</div>
-                        )}
-                      </td>
-                      <td>
-                        <select
-                          className="status-select"
-                          value={order.order_status || "pending"}
-                          onChange={e => handleStatusChange(order.order_id, e.target.value)}
-                        >
-                          {STATUS_OPTIONS.map(s => (
-                            <option key={s} value={s}>{s.replace("_", " ")}</option>
-                          ))}
-                        </select>
-                      </td>
-                    </tr>
-                  ))}
+                  {orders.map(order => {
+                    // ── Warehouse role flags ──────────────────────────────
+                    const myWH = Number(adminWarehouse?.warehouse_id);
+                    const srcWH = Number(order.source_warehouse_id);
+                    const dstWH = Number(order.destination_warehouse_id);
+                    const sameWarehouse = srcWH === dstWH;
+                    const iAmSellerAdmin = myWH === srcWH;
+                    const iAmCustomerAdmin = myWH === dstWH;
+                    const status = order.order_status;
+
+                    return (
+                      <tr key={order.order_id}>
+                        <td><strong>#{order.order_id}</strong></td>
+                        <td><strong>${parseFloat(order.total_amount).toFixed(2)}</strong></td>
+                        <td>
+                          <span className={`payment-badge ${order.payment_status}`}>
+                            {order.payment_method} / {order.payment_status}
+                          </span>
+                        </td>
+                        <td><StatusBadge status={status} /></td>
+
+                        {/* ── Warehouse Action ── */}
+                        <td>
+                          {/* Seller-WH admin: both warehouses differ → show "Send to Customer WH" */}
+                          {iAmSellerAdmin && !sameWarehouse && status === "sent_seller_wh" && (
+                            <button
+                              className="warehouse-action-btn"
+                              onClick={() => handleSendToCustomerWarehouse(order.order_id)}
+                            >
+                              Send to Customer Warehouse
+                            </button>
+                          )}
+
+                          {/* Seller-WH admin: already dispatched to customer WH */}
+                          {iAmSellerAdmin && !sameWarehouse && status === "sent_customer_wh" && (
+                            <span className="ready-text">📦 In transit to customer warehouse</span>
+                          )}
+
+                          {/* Customer-WH admin: order has arrived */}
+                          {iAmCustomerAdmin && !sameWarehouse && status === "sent_customer_wh" && (
+                            <span className="ready-text">✓ Order arrived — assign delivery man →</span>
+                          )}
+
+                          {/* Same warehouse: no inter-warehouse transfer needed */}
+                          {sameWarehouse && iAmSellerAdmin && status === "sent_seller_wh" && (
+                            <span className="ready-text">Same warehouse — assign directly →</span>
+                          )}
+                        </td>
+
+                        {/* ── Delivery Action ── */}
+                        <td>
+                          {/*
+                           * CASE 1: Same warehouse admin assigns after seller sends to wh
+                           * CASE 2: Customer-WH admin assigns after order arrives from seller WH
+                           * In both cases the order must be in the right status.
+                           */}
+                          {sameWarehouse && iAmSellerAdmin && status === "sent_seller_wh" && (
+                            <DeliverySelect order={order} />
+                          )}
+
+                          {iAmCustomerAdmin && !sameWarehouse && status === "sent_customer_wh" && (
+                            <DeliverySelect order={order} />
+                          )}
+
+                          {/* Post-assignment: let the admin move through delivery stages */}
+                          {["assigned", "picked", "on_the_way"].includes(status) && (
+                            <select
+                              className="status-select"
+                              value={status}
+                              onChange={e => handleStatusChange(order.order_id, e.target.value)}
+                            >
+                              {["assigned", "picked", "on_the_way", "delivered"].map(s => (
+                                <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+                              ))}
+                            </select>
+                          )}
+
+                          {["assigned", "picked", "on_the_way", "delivered"].includes(status)
+                            && order.deliveryman_name && (
+                            <div className="assigned-name">✓ {order.deliveryman_name}</div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
-              {orders.length === 0 && <p className="empty-msg">No orders yet</p>}
+              {orders.length === 0 && <p className="empty-msg">No orders for your warehouse yet</p>}
             </div>
           </div>
         )}
@@ -226,15 +312,15 @@ const AdminPanel = () => {
                 <h3>Add Delivery Man</h3>
                 <div className="add-form-grid">
                   <input placeholder="Full Name *" value={newDeliveryMan.name}
-                    onChange={e => setNewDeliveryMan({...newDeliveryMan, name: e.target.value})} />
+                    onChange={e => setNewDeliveryMan({ ...newDeliveryMan, name: e.target.value })} />
                   <input placeholder="Email" value={newDeliveryMan.email}
-                    onChange={e => setNewDeliveryMan({...newDeliveryMan, email: e.target.value})} />
+                    onChange={e => setNewDeliveryMan({ ...newDeliveryMan, email: e.target.value })} />
                   <input placeholder="Phone" value={newDeliveryMan.phone}
-                    onChange={e => setNewDeliveryMan({...newDeliveryMan, phone: e.target.value})} />
+                    onChange={e => setNewDeliveryMan({ ...newDeliveryMan, phone: e.target.value })} />
                   <input placeholder="Password *" type="password" value={newDeliveryMan.password}
-                    onChange={e => setNewDeliveryMan({...newDeliveryMan, password: e.target.value})} />
+                    onChange={e => setNewDeliveryMan({ ...newDeliveryMan, password: e.target.value })} />
                   <select value={newDeliveryMan.vehicle_type}
-                    onChange={e => setNewDeliveryMan({...newDeliveryMan, vehicle_type: e.target.value})}>
+                    onChange={e => setNewDeliveryMan({ ...newDeliveryMan, vehicle_type: e.target.value })}>
                     <option value="">Vehicle Type</option>
                     <option value="bike">Bike</option>
                     <option value="bicycle">Bicycle</option>

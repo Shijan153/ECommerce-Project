@@ -17,9 +17,11 @@ const DeliveryAuth = () => {
   });
 
   useEffect(() => {
+    // Clear ALL tokens when entering delivery auth pages
     localStorage.removeItem('auth-token');
     localStorage.removeItem('seller-token');
     localStorage.removeItem('admin-token');
+    localStorage.removeItem('delivery-token');
 
     setMode(location.pathname === "/delivery-register" ? "register" : "login");
     setError("");

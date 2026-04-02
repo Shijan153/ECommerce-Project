@@ -5,11 +5,20 @@ export const ShopContext = createContext(null);
 const ShopContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
   const [cartSizes, setCartSizes] = useState({});
-  const [token, setToken] = useState(localStorage.getItem('auth-token'));
-  const [sellerToken, setSellerToken] = useState(localStorage.getItem('seller-token'));
+  const [token, setToken] = useState(null); // Start with null instead of localStorage
+  const [sellerToken, setSellerToken] = useState(null); // Start with null instead of localStorage
   const [sellerProducts, setSellerProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const syncTimeout = useRef(null);
+
+  // Clear all authentication tokens on app initialization
+  useEffect(() => {
+    localStorage.removeItem('auth-token');
+    localStorage.removeItem('seller-token');
+    localStorage.removeItem('admin-token');
+    localStorage.removeItem('delivery-token');
+    console.log('All authentication tokens cleared - app initialized in logout state');
+  }, []);
 
   useEffect(() => { fetchAllProducts(); }, []);
 

@@ -132,6 +132,23 @@
   overflow-x: auto;
 }
 
+.ot-steps-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: nowrap;
+}
+
+.ot-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  position: relative;
+}
+
 .ot-step {
   display: flex;
   flex-direction: column;
@@ -162,8 +179,15 @@
 }
 
 .ot-step.active .ot-step-circle {
-  box-shadow: 0 0 0 4px rgba(255,65,65,0.2);
+  background: #ff4141 !important;
+  box-shadow: 0 0 0 4px rgba(255,65,65,0.3);
   transform: scale(1.15);
+  animation: activePulse 2s infinite;
+}
+
+@keyframes activePulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(255,65,65,0.3); }
+  50% { box-shadow: 0 0 0 8px rgba(255,65,65,0.2); }
 }
 
 .ot-step-label {
@@ -176,7 +200,35 @@
 }
 
 .ot-step.completed .ot-step-label { color: #333; font-weight: 600; }
-.ot-step.active .ot-step-label { color: #ff4141; font-weight: 700; }
+.ot-step.active .ot-step-label { 
+  color: #ff4141; 
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(255,65,65,0.2);
+}
+
+.ot-active-indicator {
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ff4141;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(255,65,65,0.4);
+  animation: indicatorBounce 2s infinite;
+  border: 2px solid #ffffff;
+}
+
+@keyframes indicatorBounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-2px); }
+}
 
 .ot-step-line {
   flex: 1;
@@ -249,6 +301,87 @@
   color: #ff4141 !important;
   font-weight: 600;
 }
+
+.ot-review-btn {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.ot-review-btn:hover { background: #0056b3; }
+
+.ot-review-form {
+  margin-top: 20px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.ot-review-form h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.ot-rating-stars {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.ot-rating-stars .star {
+  font-size: 24px;
+  cursor: pointer;
+  color: #ddd;
+  transition: color 0.2s;
+}
+
+.ot-rating-stars .star.filled { color: #ffc107; }
+
+.ot-review-form textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  resize: vertical;
+  margin-bottom: 12px;
+}
+
+.ot-review-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.ot-review-buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.ot-review-buttons button:first-child {
+  background: #28a745;
+  color: white;
+}
+
+.ot-review-buttons button:first-child:hover { background: #218838; }
+
+.ot-review-buttons button:last-child {
+  background: #6c757d;
+  color: white;
+}
+
+.ot-review-buttons button:last-child:hover { background: #545b62; }
 
 @media (max-width: 768px) {
   .ot-details-grid { grid-template-columns: 1fr; }

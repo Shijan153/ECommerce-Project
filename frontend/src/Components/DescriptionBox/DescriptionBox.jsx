@@ -1,6 +1,6 @@
 import React from 'react'
 import './DescriptionBox.css'
-const DescriptionBox = ({ description }) => {
+const DescriptionBox = ({ description, activeTab, onTabChange, reviewCount }) => {
   const body = description ? (
     <p>{description}</p>
   ) : (
@@ -16,13 +16,25 @@ const DescriptionBox = ({ description }) => {
 
   return (
     <div className='descriptionbox'>
-        <div className="descriptionbox-navigator">
-            <div className="descriptionbox-nav-box">Description</div>
-            <div className="descriptionbox-nav-box fade">Reviews (122)</div>       
+      <div className="descriptionbox-navigator">
+        <div
+          className={`descriptionbox-nav-box ${activeTab === 'description' ? 'active' : 'fade'}`}
+          onClick={() => onTabChange('description')}
+        >
+          Description
         </div>
-        <div className="descriptionbox-description">{body}</div>
+        <div
+          className={`descriptionbox-nav-box ${activeTab === 'reviews' ? 'active' : 'fade'}`}
+          onClick={() => onTabChange('reviews')}
+        >
+          Reviews ({reviewCount || 0})
+        </div>
+      </div>
+      <div className="descriptionbox-description">
+        {activeTab === 'description' ? body : <p>Select Reviews tab to see customer feedback below.</p>}
+      </div>
     </div>
-  )
+  );
 }
 
-export default DescriptionBox
+export default DescriptionBox;

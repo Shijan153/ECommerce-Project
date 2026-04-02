@@ -20,6 +20,8 @@ const AdminAuth = () => {
   useEffect(() => {
     localStorage.removeItem('auth-token');
     localStorage.removeItem('seller-token');
+    localStorage.removeItem('admin-token');
+    localStorage.removeItem('admin-warehouse'); // ← ADDED
     localStorage.removeItem('delivery-token');
 
     setMode(location.pathname === "/admin-register" ? "register" : "login");
@@ -32,10 +34,7 @@ const AdminAuth = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    // Focus email input when component mounts or mode changes
-    if (emailRef.current) {
-      emailRef.current.focus();
-    }
+    if (emailRef.current) emailRef.current.focus();
   }, [mode]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -44,7 +43,6 @@ const AdminAuth = () => {
     setError("");
     setSuccessMsg("");
 
-    // Basic validation
     if (mode === "register") {
       if (!form.name || !form.email || !form.phone || !form.password ||
           !form.house_no || !form.street || !form.postal_code || !form.city_id) {
@@ -81,13 +79,19 @@ const AdminAuth = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // Both login and register return a token
-        const adminToken = data.data?.token || data.token;
+        const adminData = data.data || {};
+        const adminToken = adminData.token || data.token;
         if (adminToken) {
           localStorage.setItem("admin-token", adminToken);
         }
+        // ← ADDED: persist warehouse so AdminPanel can do warehouse-based UI logic
+        if (adminData.warehouse_id) {
+          localStorage.setItem("admin-warehouse", JSON.stringify({
+            warehouse_id: Number(adminData.warehouse_id),
+            warehouse_name: adminData.warehouse_name || `Warehouse ${adminData.warehouse_id}`
+          }));
+        }
         if (mode === "register") {
-          // Show success then redirect
           setSuccessMsg("Admin account created! Redirecting to panel...");
           setTimeout(() => navigate("/admin"), 1500);
         } else {
@@ -107,40 +111,14 @@ const AdminAuth = () => {
     <div className="admin-auth-page">
       <div className="admin-auth-box">
         <h2>Admin {mode === "register" ? "Registration" : "Login"}</h2>
-
         <div className="admin-auth-fields">
           {mode === "register" && (
             <>
-              <input
-                name="name"
-                value={form.name}
-                placeholder="Admin Name *"
-                onChange={handleChange}
-              />
-              <input
-                name="phone"
-                value={form.phone}
-                placeholder="Phone Number"
-                onChange={handleChange}
-              />
-              <input
-                name="house_no"
-                value={form.house_no}
-                placeholder="House No"
-                onChange={handleChange}
-              />
-              <input
-                name="street"
-                value={form.street}
-                placeholder="Street"
-                onChange={handleChange}
-              />
-              <input
-                name="postal_code"
-                value={form.postal_code}
-                placeholder="Postal Code"
-                onChange={handleChange}
-              />
+              <input name="name" value={form.name} placeholder="Admin Name *" onChange={handleChange} />
+              <input name="phone" value={form.phone} placeholder="Phone Number" onChange={handleChange} />
+              <input name="house_no" value={form.house_no} placeholder="House No" onChange={handleChange} />
+              <input name="street" value={form.street} placeholder="Street" onChange={handleChange} />
+              <input name="postal_code" value={form.postal_code} placeholder="Postal Code" onChange={handleChange} />
               <select name="city_id" value={form.city_id} onChange={handleChange}>
                 <option value="">Select City</option>
                 {cities.map(c => (
@@ -149,32 +127,16 @@ const AdminAuth = () => {
               </select>
             </>
           )}
-          <input
-            ref={emailRef}
-            name="email"
-            value={form.email}
-            type="email"
-            placeholder="Email *"
-            onChange={handleChange}
-          />
-          <input
-            name="password"
-            value={form.password}
-            type="password"
-            placeholder="Password *"
-            onChange={handleChange}
-          />
+          <input ref={emailRef} name="email" value={form.email} type="email"
+            placeholder="Email *" onChange={handleChange} />
+          <input name="password" value={form.password} type="password"
+            placeholder="Password *" onChange={handleChange} />
         </div>
-
-        {/* FIX: was "admin-auth-error", now correctly named */}
         {error && <p className="admin-auth-error">{error}</p>}
         {successMsg && <p className="admin-auth-success">{successMsg}</p>}
-
         <button onClick={handleSubmit} disabled={loading}>
           {loading ? "Please wait..." : mode === "register" ? "Create Account" : "Login"}
         </button>
-
-        {/* FIX: was className="admin-toggle" (undefined in CSS) → now "admin-auth-toggle" */}
         <p className="admin-auth-toggle">
           {mode === "register" ? "Already an admin? " : "Need an admin account? "}
           <span onClick={() => navigate(mode === "register" ? "/admin-login" : "/admin-register")}>
