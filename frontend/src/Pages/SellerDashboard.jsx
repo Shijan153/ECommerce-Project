@@ -14,7 +14,9 @@ const SellerDashboard = () => {
   const { sellerToken, sellerProducts, fetchSellerProducts, sellerLogout } = useContext(ShopContext);
   const [activeTab, setActiveTab] = useState('add');
   const [orders, setOrders] = useState([]);
+  const [salesSummary, setSalesSummary] = useState(null);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [salesLoading, setSalesLoading] = useState(false);
   const [error, setError] = useState('');
   const [editingProduct, setEditingProduct] = useState(null);
   const [editForm, setEditForm] = useState({ product_stock: '', sizes: [] });
@@ -41,11 +43,28 @@ const SellerDashboard = () => {
     }
   };
 
+  const fetchSalesSummary = async () => {
+    setSalesLoading(true);
+    try {
+      const res = await fetch('http://localhost:5000/api/seller/sales-summary', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) setSalesSummary(data.data || null);
+      else setError(data.message || 'Failed to fetch sales summary');
+    } catch {
+      setError('Network error while fetching sales summary');
+    } finally {
+      setSalesLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (sellerToken && !hasFetched.current) {
       hasFetched.current = true;
       fetchSellerProducts();
       fetchOrders();
+      fetchSalesSummary();
     }
   }, [sellerToken]);
 
@@ -214,6 +233,9 @@ const SellerDashboard = () => {
               </span>
             )}
           </button>
+          <button className={activeTab === 'sales' ? 'active' : ''} onClick={() => setActiveTab('sales')}>
+            Sales Data
+          </button>
         </nav>
 
         <button className="seller-logout-btn" onClick={handleLogout}>Logout</button>
@@ -321,6 +343,39 @@ const SellerDashboard = () => {
                 <p>No products found. Add your first product!</p>
               )}
             </div>
+          </div>
+        )}
+
+        {activeTab === 'sales' && (
+          <div className="seller-sales-summary">
+            <div className="sales-header">
+              <h2>Sales Summary</h2>
+              <button className="refresh-btn" onClick={fetchSalesSummary}>↻ Refresh</button>
+            </div>
+            {salesLoading ? (
+              <p className="loading-text">Loading sales data...</p>
+            ) : !salesSummary ? (
+              <p className="no-sales">No sales data available</p>
+            ) : (
+              <div className="sales-grid">
+                <div className="sales-card">
+                  <h3>Today</h3>
+                  <p>${parseFloat(salesSummary.today_sales || 0).toFixed(2)}</p>
+                </div>
+                <div className="sales-card">
+                  <h3>Last 7 Days</h3>
+                  <p>${parseFloat(salesSummary.last_7_days_sales || 0).toFixed(2)}</p>
+                </div>
+                <div className="sales-card">
+                  <h3>Last 1 Month</h3>
+                  <p>${parseFloat(salesSummary.last_1_month_sales || 0).toFixed(2)}</p>
+                </div>
+                <div className="sales-card">
+                  <h3>Total</h3>
+                  <p>${parseFloat(salesSummary.total_sales || 0).toFixed(2)}</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

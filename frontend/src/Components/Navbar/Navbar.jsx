@@ -66,6 +66,14 @@ const Navbar = () => {
           </Link>
         )}
 
+        {token && (
+          <Link to='/profile'>
+            <div className="nav-profile-icon">
+              <span>👤</span>
+            </div>
+          </Link>
+        )}
+
         <Link to='/cart'>
           <img src={cart_icon} alt="" />
         </Link>

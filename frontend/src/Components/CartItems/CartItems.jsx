@@ -5,14 +5,29 @@ import remove_icon from '../Assets/cart_cross_icon.png'
 import { useNavigate } from 'react-router-dom'
 
 const CartItems = () => {
-    const { cartItems, cartSizes, removeFromCart } = useContext(ShopContext);
+    const { cartItems, removeFromCart, increment, decrement } = useContext(ShopContext);
     const [cartProducts, setCartProducts] = useState([]);
+    const [cartEntries, setCartEntries] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
+        const cartEntryList = Object.entries(cartItems)
+            .filter(([, quantity]) => quantity > 0)
+            .map(([key, quantity]) => {
+                const [product_id, selected_size] = key.split(':');
+                return {
+                    product_id: Number(product_id),
+                    selected_size: selected_size || '',
+                    quantity
+                };
+            });
+
+        setCartEntries(cartEntryList);
+
+        const productIds = [...new Set(cartEntryList.map(entry => entry.product_id))];
+        if (productIds.length === 0) { setCartProducts([]); return; }
+
         const fetchCartProducts = async () => {
-            const productIds = Object.keys(cartItems).filter(id => cartItems[id] > 0);
-            if (productIds.length === 0) { setCartProducts([]); return; }
             try {
                 const promises = productIds.map(id =>
                     fetch(`http://localhost:5000/api/products/${id}`).then(r => r.json())
@@ -26,8 +41,10 @@ const CartItems = () => {
         fetchCartProducts();
     }, [cartItems]);
 
-    const subtotal = cartProducts.reduce((sum, product) => {
-        return sum + (parseFloat(product.product_price) * (cartItems[product.product_id] || 0));
+    const subtotal = cartEntries.reduce((sum, entry) => {
+        const product = cartProducts.find(p => p.product_id === entry.product_id);
+        if (!product) return sum;
+        return sum + (parseFloat(product.product_price) * entry.quantity);
     }, 0);
 
     return (
@@ -41,12 +58,12 @@ const CartItems = () => {
                 <p>Remove</p>
             </div>
             <hr />
-            {cartProducts.map((product) => {
-                const quantity = cartItems[product.product_id];
-                if (!quantity || quantity <= 0) return null;
-                const selectedSize = cartSizes?.[product.product_id];
+            {cartEntries.map((entry) => {
+                const product = cartProducts.find(p => p.product_id === entry.product_id);
+                if (!product || entry.quantity <= 0) return null;
+                const itemKey = `${entry.product_id}:${entry.selected_size}`;
                 return (
-                    <div key={product.product_id}>
+                    <div key={itemKey}>
                         <div className="cartitems-format cartitems-format-main">
                             <img
                                 src={product.image_url || 'https://placehold.co/200x200?text=No+Image'}
@@ -59,17 +76,17 @@ const CartItems = () => {
                             />
                             <div>
                                 <p>{product.product_name}</p>
-                                {selectedSize && (
-                                    <p className="cart-item-size">Size: <strong>{selectedSize}</strong></p>
+                                {entry.selected_size && (
+                                    <p className="cart-item-size">Size: <strong>{entry.selected_size}</strong></p>
                                 )}
                             </div>
                             <p>${parseFloat(product.product_price).toFixed(2)}</p>
-                            <button className='cartitems-quantity'>{quantity}</button>
-                            <p>${(parseFloat(product.product_price) * quantity).toFixed(2)}</p>
+                            <button className='cartitems-quantity'>{entry.quantity}</button>
+                            <p>${(parseFloat(product.product_price) * entry.quantity).toFixed(2)}</p>
                             <img
                                 className='cartitems-remove-icon'
                                 src={remove_icon}
-                                onClick={() => removeFromCart(product.product_id)}
+                                onClick={() => removeFromCart(entry.product_id, entry.selected_size)}
                                 alt="remove"
                             />
                         </div>

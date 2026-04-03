@@ -5,26 +5,24 @@ export const ShopContext = createContext(null);
 const ShopContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
   const [cartSizes, setCartSizes] = useState({});
-  const [token, setToken] = useState(null); // Start with null instead of localStorage
-  const [sellerToken, setSellerToken] = useState(null); // Start with null instead of localStorage
+  const [token, setToken] = useState(localStorage.getItem('auth-token'));
+  const [sellerToken, setSellerToken] = useState(localStorage.getItem('seller-token'));
   const [sellerProducts, setSellerProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
+  const [userDataLoading, setUserDataLoading] = useState(false);
+  const [userData, setUserData] = useState(null);
   const syncTimeout = useRef(null);
-
-  // Clear all authentication tokens on app initialization
-  useEffect(() => {
-    localStorage.removeItem('auth-token');
-    localStorage.removeItem('seller-token');
-    localStorage.removeItem('admin-token');
-    localStorage.removeItem('delivery-token');
-    console.log('All authentication tokens cleared - app initialized in logout state');
-  }, []);
 
   useEffect(() => { fetchAllProducts(); }, []);
 
   useEffect(() => {
-    if (token) fetchCartFromDB(token);
-    else setCartItems({});
+    if (token) {
+      fetchCartFromDB(token);
+      fetchUserData(token);
+    } else {
+      setCartItems({});
+      setUserData(null);
+    }
   }, [token]);
 
   const fetchAllProducts = async () => {
@@ -57,6 +55,37 @@ const ShopContextProvider = (props) => {
       }
     } catch (error) {
       console.error('Error fetching cart from DB:', error);
+    }
+  };
+
+  const fetchUserData = async (authToken) => {
+    if (!authToken) {
+      setUserData(null);
+      return;
+    }
+
+    setUserDataLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/user/profile', {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      const data = await response.json();
+      console.debug('fetchUserData status', response.status, 'token', authToken, 'data', data);
+      if (response.ok) {
+        setUserData(data.data || null);
+      } else {
+        setUserData(null);
+        if (response.status === 401) {
+          localStorage.removeItem('auth-token');
+          setToken(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      setUserData(null);
+    } finally {
+      setUserDataLoading(false);
     }
   };
 
@@ -171,11 +200,39 @@ const ShopContextProvider = (props) => {
     }
   };
 
+  const updateUserProfile = async (mobile, house_no, street, postal_code, city_id) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          mobile,
+          house_no,
+          street,
+          postal_code,
+          city_id: city_id ? parseInt(city_id) : null
+        })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setUserData(data.data);
+        return { success: true };
+      }
+      return { success: false, message: data.message };
+    } catch {
+      return { success: false, message: 'Network error' };
+    }
+  };
+
   const customerLogout = () => {
     localStorage.removeItem('auth-token');
     setToken(null);
     setCartItems({});
     setCartSizes({});
+    setUserData(null);
   };
 
   const fetchSellerProducts = async () => {
@@ -268,8 +325,11 @@ const ShopContextProvider = (props) => {
     token,
     sellerToken,
     sellerProducts,
+    userDataLoading,
+    userData,
     customerLogin,
     customerSignup,
+    updateUserProfile,
     customerLogout,
     fetchSellerProducts,
     sellerLogin,

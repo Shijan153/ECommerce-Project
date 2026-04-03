@@ -473,3 +473,69 @@
 .warehouse-btn:hover { background: #d97706; }
 
 .done-text { font-size: 13px; color: #888; font-style: italic; }
+
+/* ── New attractive sales summary styling ── */
+.seller-sales-summary {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  padding: 28px;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(11, 22, 58, 0.08);
+  border: 1px solid rgba(71, 85, 105, 0.16);
+  margin-bottom: 24px;
+}
+
+.sales-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.sales-header h2 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.sales-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px;
+}
+
+.sales-card {
+  background: linear-gradient(160deg, #e0f2fe 0%, #fef3c7 100%);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(147, 197, 253, 0.45);
+  box-shadow: 0 8px 20px rgba(57, 117, 192, 0.12);
+  min-height: 118px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.sales-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 24px rgba(57, 117, 192, 0.22);
+}
+
+.sales-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #1e3a8a;
+}
+
+.sales-card p {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0;
+  color: #0f172a;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 900px) {
+  .dashboard-content { padding: 20px 16px; }
+  .dashboard-sidebar { width: 220px; }
+  .sales-card p { font-size: 22px; }
+}

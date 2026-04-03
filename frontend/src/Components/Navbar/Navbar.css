@@ -180,9 +180,29 @@
 .nav-login-cart .orders-btn:hover {
   background: #1a5276;
 }
+
+.nav-profile-icon {
+  width: 32px;
+  height: 32px;
+  background: #f0f0f0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 18px;
+}
+
+.nav-profile-icon:hover {
+  background: #e0e0e0;
+  transform: scale(1.1);
+}
+
 @media (max-width: 1280px) {
     .nav-menu { gap: 16px; font-size: 15px; }
     .nav-logo p { font-size: 26px; }
     .nav-login-cart { gap: 6px; }
     .nav-login-cart button { height: 38px; font-size: 12px; padding: 0 10px; }
+    .nav-profile-icon { width: 28px; height: 28px; font-size: 16px; }
 }

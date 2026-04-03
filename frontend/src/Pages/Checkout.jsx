@@ -4,11 +4,12 @@ import { ShopContext } from '../Context/ShopContext';
 import './CSS/Checkout.css';
 
 const Checkout = () => {
-  const { cartItems, cartSizes, allProducts, setCartItems, token } = useContext(ShopContext);
+  const { cartItems, allProducts, setCartItems, token } = useContext(ShopContext);
   const authToken = token || localStorage.getItem('auth-token');
   const navigate = useNavigate();
 
   const [cartLoaded, setCartLoaded] = useState(false);
+  const [cartEntries, setCartEntries] = useState([]);
   const [form, setForm] = useState({
     promo_code: '',
     order_notes: ''
@@ -21,6 +22,21 @@ const Checkout = () => {
   const [promoApplied, setPromoApplied] = useState(false);
   const [discount, setDiscount] = useState(0);
 
+  // Parse cartItems composite keys and build entries
+  useEffect(() => {
+    const parsed = Object.entries(cartItems)
+      .filter(([, quantity]) => quantity > 0)
+      .map(([key, quantity]) => {
+        const [product_id, selected_size] = key.split(':');
+        return {
+          product_id: Number(product_id),
+          selected_size: selected_size || '',
+          quantity
+        };
+      });
+    setCartEntries(parsed);
+  }, [cartItems]);
+
   // Wait until allProducts is populated before filtering
   useEffect(() => {
     if (!authToken) {
@@ -32,12 +48,15 @@ const Checkout = () => {
     }
   }, [allProducts, authToken, navigate]);
 
-  const cartProductList = cartLoaded
-    ? allProducts.filter(p => cartItems[p.product_id] > 0)
+  const cartProductList = cartLoaded && cartEntries.length > 0
+    ? cartEntries.map(entry => {
+        const product = allProducts.find(p => p.product_id === entry.product_id);
+        return { ...product, ...entry };
+      }).filter(p => p.product_id)
     : [];
 
-  const subtotal = cartProductList.reduce((sum, p) => {
-    return sum + (parseFloat(p.product_price) * cartItems[p.product_id]);
+  const subtotal = cartProductList.reduce((sum, entry) => {
+    return sum + (parseFloat(entry.product_price) * entry.quantity);
   }, 0);
 
   const total = Math.max(subtotal - discount, 0);
@@ -91,11 +110,11 @@ const Checkout = () => {
   };
 
   const buildOrderItems = () => {
-    return cartProductList.map(p => ({
-      product_id: p.product_id,
-      quantity: cartItems[p.product_id],
-      price: parseFloat(p.product_price),
-      selected_size: cartSizes?.[p.product_id] || null
+    return cartProductList.map(entry => ({
+      product_id: entry.product_id,
+      quantity: entry.quantity,
+      price: parseFloat(entry.product_price),
+      selected_size: entry.selected_size || null
     }));
   };
 
@@ -231,25 +250,25 @@ const Checkout = () => {
             ) : cartProductList.length === 0 ? (
               <p style={{ color: '#888', fontSize: '14px' }}>No items in cart</p>
             ) : (
-              cartProductList.map(p => (
-                <div key={p.product_id} className="order-item">
+              cartProductList.map(entry => (
+                <div key={`${entry.product_id}:${entry.selected_size}`} className="order-item">
                   <img
-                    src={p.image_url || 'https://placehold.co/60x60?text=No+Image'}
-                    alt={p.product_name}
+                    src={entry.image_url || 'https://placehold.co/60x60?text=No+Image'}
+                    alt={entry.product_name}
                     onError={e => {
                       e.target.onerror = null;
                       e.target.src = 'https://placehold.co/60x60?text=No+Image';
                     }}
                   />
                   <div className="order-item-info">
-                    <p className="order-item-name">{p.product_name}</p>
-                    <p className="order-item-qty">Qty: {cartItems[p.product_id]}</p>
-                    {cartSizes?.[p.product_id] && (
-                      <p className="order-item-size">Size: {cartSizes[p.product_id]}</p>
+                    <p className="order-item-name">{entry.product_name}</p>
+                    <p className="order-item-qty">Qty: {entry.quantity}</p>
+                    {entry.selected_size && (
+                      <p className="order-item-size">Size: {entry.selected_size}</p>
                     )}
                   </div>
                   <p className="order-item-price">
-                    ${(parseFloat(p.product_price) * cartItems[p.product_id]).toFixed(2)}
+                    ${(parseFloat(entry.product_price) * entry.quantity).toFixed(2)}
                   </p>
                 </div>
               ))

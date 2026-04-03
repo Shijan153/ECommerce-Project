@@ -7,6 +7,7 @@ import ShopCategory from './Pages/ShopCategory';
 import Product from './Pages/Product';
 import Cart from './Pages/Cart';
 import LoginSignup from './Pages/LoginSignup';
+import Profile from './Components/Profile/Profile';
 import SellerAuth from './Pages/SellerAuth';
 import SellerDashboard from './Pages/SellerDashboard';
 import Checkout from './Pages/Checkout';
@@ -60,6 +61,7 @@ const Layout = () => {
         <Route path='/cart' element={<Cart />} />
         <Route path='/login' element={<LoginSignup mode="login" />} />
         <Route path='/signup' element={<LoginSignup mode="signup" />} />
+        <Route path='/profile' element={<Profile />} />
         <Route path='/seller-login' element={<SellerAuth />} />
         <Route path='/seller-signup' element={<SellerAuth />} />
         <Route path='/seller-dashboard' element={<SellerDashboard />} />
