@@ -4,9 +4,8 @@ export const ShopContext = createContext(null);
 
 const ShopContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
-  const [cartSizes, setCartSizes] = useState({});
-  const [token, setToken] = useState(localStorage.getItem('auth-token'));
-  const [sellerToken, setSellerToken] = useState(localStorage.getItem('seller-token'));
+  const [token, setToken] = useState(null);
+  const [sellerToken, setSellerToken] = useState(null);
   const [sellerProducts, setSellerProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const [userDataLoading, setUserDataLoading] = useState(false);
@@ -35,6 +34,12 @@ const ShopContextProvider = (props) => {
     }
   };
 
+  const makeCartKey = (productId, size = '') => `${productId}:${size || ''}`;
+  const parseCartKey = (key) => {
+    const [product_id, selected_size] = key.split(':');
+    return { product_id: Number(product_id), selected_size: selected_size || '' };
+  };
+
   const fetchCartFromDB = async (authToken) => {
     try {
       const response = await fetch('http://localhost:5000/api/cart', {
@@ -43,15 +48,13 @@ const ShopContextProvider = (props) => {
       const data = await response.json();
       if (data.data?.items?.length > 0) {
         const restored = {};
-        const restoredSizes = {};
         data.data.items.forEach(item => {
           if (item.quantity > 0) {
-            restored[item.product_id] = item.quantity;
-            if (item.selected_size) restoredSizes[item.product_id] = item.selected_size;
+            const key = makeCartKey(item.product_id, item.selected_size || '');
+            restored[key] = (restored[key] || 0) + item.quantity;
           }
         });
         setCartItems(restored);
-        setCartSizes(restoredSizes);
       }
     } catch (error) {
       console.error('Error fetching cart from DB:', error);
@@ -89,21 +92,22 @@ const ShopContextProvider = (props) => {
     }
   };
 
-  const syncCartToDB = useCallback((updatedCart, updatedSizes) => {
+  const syncCartToDB = useCallback((updatedCart) => {
     const authToken = localStorage.getItem('auth-token');
     if (!authToken) return;
     if (syncTimeout.current) clearTimeout(syncTimeout.current);
     syncTimeout.current = setTimeout(async () => {
       try {
-        const items = Object.keys(updatedCart)
-          .filter(id => updatedCart[id] > 0)
-          .map(id => {
-            const product = allProducts.find(p => p.product_id === Number(id));
+        const items = Object.entries(updatedCart)
+          .filter(([, quantity]) => quantity > 0)
+          .map(([key, quantity]) => {
+            const { product_id, selected_size } = parseCartKey(key);
+            const product = allProducts.find(p => p.product_id === Number(product_id));
             return {
-              product_id: Number(id),
-              quantity: updatedCart[id],
+              product_id: Number(product_id),
+              quantity,
               price: product ? parseFloat(product.product_price) : 0,
-              selected_size: updatedSizes[id] || null
+              selected_size: selected_size || null
             };
           });
         const total_amount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -122,39 +126,51 @@ const ShopContextProvider = (props) => {
   }, [allProducts]);
 
   const addToCart = (itemId, size = '') => {
+    const key = makeCartKey(itemId, size);
     setCartItems(prev => {
-      const updated = { ...prev, [itemId]: (prev[itemId] || 0) + 1 };
-      const updatedSizes = size ? { ...cartSizes, [itemId]: size } : cartSizes;
-      if (size) setCartSizes(updatedSizes);
-      syncCartToDB(updated, size ? updatedSizes : cartSizes);
+      const updated = { ...prev, [key]: (prev[key] || 0) + 1 };
+      syncCartToDB(updated);
       return updated;
     });
   };
 
-  const removeFromCart = (itemId) => {
+  const removeFromCart = (itemId, size = '') => {
+    const key = makeCartKey(itemId, size);
     setCartItems(prev => {
-      const updated = { ...prev, [itemId]: Math.max((prev[itemId] || 0) - 1, 0) };
-      syncCartToDB(updated, cartSizes);
+      const updatedQuantity = Math.max((prev[key] || 0) - 1, 0);
+      const updated = { ...prev };
+      if (updatedQuantity === 0) delete updated[key];
+      else updated[key] = updatedQuantity;
+      syncCartToDB(updated);
       return updated;
     });
+  };
+
+  const increment = (itemId, size = '') => {
+    addToCart(itemId, size);
+  };
+
+  const decrement = (itemId, size = '') => {
+    removeFromCart(itemId, size);
   };
 
   const getTotalCartAmount = () => {
     let totalAmount = 0;
-    for (const item in cartItems) {
-      if (cartItems[item] > 0) {
-        const itemInfo = allProducts.find(p => p.product_id === Number(item));
-        if (itemInfo) totalAmount += parseFloat(itemInfo.product_price) * cartItems[item];
+    Object.entries(cartItems).forEach(([key, quantity]) => {
+      if (quantity > 0) {
+        const { product_id } = parseCartKey(key);
+        const itemInfo = allProducts.find(p => p.product_id === Number(product_id));
+        if (itemInfo) totalAmount += parseFloat(itemInfo.product_price) * quantity;
       }
-    }
+    });
     return totalAmount.toFixed(2);
   };
 
   const getTotalCartItems = () => {
     let totalItem = 0;
-    for (const item in cartItems) {
-      if (cartItems[item] > 0) totalItem += cartItems[item];
-    }
+    Object.values(cartItems).forEach(quantity => {
+      if (quantity > 0) totalItem += quantity;
+    });
     return totalItem;
   };
 
@@ -231,7 +247,6 @@ const ShopContextProvider = (props) => {
     localStorage.removeItem('auth-token');
     setToken(null);
     setCartItems({});
-    setCartSizes({});
     setUserData(null);
   };
 
@@ -318,10 +333,11 @@ const ShopContextProvider = (props) => {
     all_product: allProducts,
     allProducts,
     cartItems,
-    cartSizes,
     setCartItems,
     addToCart,
     removeFromCart,
+    increment,
+    decrement,
     token,
     sellerToken,
     sellerProducts,
