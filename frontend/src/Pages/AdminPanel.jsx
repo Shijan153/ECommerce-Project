@@ -6,6 +6,9 @@ const StatusBadge = ({ status }) => (
   <span className={`status-badge status-${status}`}>{status?.replace(/_/g, " ")}</span>
 );
 
+// Statuses admin is NOT allowed to change — these belong to delivery man only
+const DELIVERY_ONLY_STATUSES = ["picked", "on_the_way", "delivered"];
+
 const AdminPanel = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("admin-token");
@@ -17,11 +20,23 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Delivery man form
   const [newDeliveryMan, setNewDeliveryMan] = useState({
     name: "", email: "", phone: "", password: "", vehicle_type: ""
   });
   const [addingDM, setAddingDM] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+
+  // Promo code state
+  const [promoCodes, setPromoCodes] = useState([]);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoSaving, setPromoSaving] = useState(false);
+  const [showPromoForm, setShowPromoForm] = useState(false);
+  const [editingPromo, setEditingPromo] = useState(null);
+  const [promoForm, setPromoForm] = useState({
+    code: "", discount_percentage: "", min_buy_amount: "", max_discount_amount: "", usage_limit: "", is_active: true
+  });
+  const [promoSuccess, setPromoSuccess] = useState("");
 
   const headers = {
     "Content-Type": "application/json",
@@ -33,6 +48,10 @@ const AdminPanel = () => {
     fetchOrders();
     fetchDeliveryMen();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (activeTab === "promo") fetchPromoCodes();
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchOrders = async () => {
     try {
@@ -50,6 +69,17 @@ const AdminPanel = () => {
       const data = await res.json();
       if (res.ok) setDeliveryMen(data.data || []);
     } catch { setError("Failed to fetch delivery men"); }
+  };
+
+  const fetchPromoCodes = async () => {
+    setPromoLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/api/admin/promo-codes", { headers });
+      const data = await res.json();
+      if (res.ok) setPromoCodes(data.data || []);
+      else setError(data.message);
+    } catch { setError("Failed to fetch promo codes"); }
+    finally { setPromoLoading(false); }
   };
 
   const handleSendToCustomerWarehouse = async (order_id) => {
@@ -88,21 +118,6 @@ const AdminPanel = () => {
     } catch { setError("Failed to assign delivery man"); }
   };
 
-  const handleStatusChange = async (order_id, order_status) => {
-    try {
-      const res = await fetch(
-        `http://localhost:5000/api/admin/orders/${order_id}/status`,
-        { method: "PUT", headers, body: JSON.stringify({ order_status }) }
-      );
-      const data = await res.json();
-      if (res.ok) {
-        setOrders(prev => prev.map(o =>
-          o.order_id === order_id ? { ...o, order_status } : o
-        ));
-      } else setError(data.message);
-    } catch { setError("Failed to update status"); }
-  };
-
   const handleAddDeliveryMan = async () => {
     if (!newDeliveryMan.name || !newDeliveryMan.password) {
       setError("Name and password are required"); return;
@@ -124,13 +139,123 @@ const AdminPanel = () => {
     finally { setAddingDM(false); }
   };
 
+  // ── Promo Code Handlers ──────────────────────────────────────────────────
+  const resetPromoForm = () => {
+    setPromoForm({ code: "", discount_percentage: "", min_buy_amount: "", max_discount_amount: "", usage_limit: "", is_active: true });
+    setEditingPromo(null);
+    setShowPromoForm(false);
+    setPromoSuccess("");
+  };
+
+  const handlePromoFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setPromoForm(prev => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+  };
+
+  const handleSavePromo = async () => {
+    setError("");
+    setPromoSuccess("");
+
+    const { code, discount_percentage, min_buy_amount, max_discount_amount, usage_limit } = promoForm;
+    if (!code.trim() || !discount_percentage || min_buy_amount === "" || !max_discount_amount || usage_limit === "") {
+      setError("All promo fields are required"); return;
+    }
+    if (parseFloat(discount_percentage) <= 0 || parseFloat(discount_percentage) > 100) {
+      setError("Discount must be between 1 and 100"); return;
+    }
+    if (parseFloat(min_buy_amount) < 0) {
+      setError("Minimum buy cannot be negative"); return;
+    }
+    if (parseFloat(max_discount_amount) <= 0) {
+      setError("Max discount must be greater than 0"); return;
+    }
+    if (Number(usage_limit) < 0) {
+      setError("Usage limit cannot be negative"); return;
+    }
+
+    setPromoSaving(true);
+    try {
+      console.log("Saving promo code", editingPromo, promoForm);
+
+      const url = editingPromo
+        ? `http://localhost:5000/api/admin/promo-codes/${editingPromo.promo_id}`
+        : "http://localhost:5000/api/admin/promo-codes";
+      const method = editingPromo ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method, headers,
+        body: JSON.stringify({
+          code: promoForm.code,
+          discount_percentage: parseFloat(promoForm.discount_percentage),
+          min_buy_amount: parseFloat(promoForm.min_buy_amount),
+          max_discount_amount: parseFloat(promoForm.max_discount_amount),
+          usage_limit: Number(promoForm.usage_limit),
+          is_active: promoForm.is_active
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPromoSuccess(editingPromo ? "Promo code updated!" : "Promo code created!");
+        resetPromoForm();
+        fetchPromoCodes();
+      } else {
+        setError(data.message || "Promo call failed");
+      }
+    } catch (err) {
+      console.error("Error saving promo code:", err);
+      setError("Failed to save promo code");
+    } finally {
+      setPromoSaving(false);
+    }
+  };
+
+  const handleEditPromo = (promo) => {
+    setEditingPromo(promo);
+    setPromoForm({
+      code: promo.code,
+      discount_percentage: promo.discount_percentage,
+      min_buy_amount: promo.min_buy_amount,
+      max_discount_amount: promo.max_discount_amount,
+      usage_limit: promo.usage_limit ?? "",
+      is_active: promo.is_active
+    });
+    setShowPromoForm(true);
+    setPromoSuccess("");
+    setError("");
+  };
+
+  const handleDeletePromo = async (promo_id) => {
+    if (!window.confirm("Delete this promo code?")) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/admin/promo-codes/${promo_id}`, {
+        method: "DELETE", headers
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPromoCodes(prev => prev.filter(p => p.promo_id !== promo_id));
+        setPromoSuccess("Promo code deleted.");
+      } else setError(data.message);
+    } catch { setError("Failed to delete promo code"); }
+  };
+
+  const handleTogglePromoActive = async (promo) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/admin/promo-codes/${promo.promo_id}`, {
+        method: "PUT", headers,
+        body: JSON.stringify({ ...promo, is_active: !promo.is_active })
+      });
+      const data = await res.json();
+      if (res.ok) fetchPromoCodes();
+      else setError(data.message);
+    } catch { setError("Failed to toggle promo"); }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("admin-token");
     localStorage.removeItem("admin-warehouse");
     navigate("/admin-login");
   };
 
-  // ── Delivery Man dropdown ──────────────────────────────────────────────────
   const DeliverySelect = ({ order }) => (
     deliveryMen.length === 0
       ? <span className="ready-text">No delivery men available.</span>
@@ -174,6 +299,9 @@ const AdminPanel = () => {
           <button className={activeTab === "delivery" ? "active" : ""} onClick={() => setActiveTab("delivery")}>
             Delivery Men
           </button>
+          <button className={activeTab === "promo" ? "active" : ""} onClick={() => setActiveTab("promo")}>
+            Promo Codes
+          </button>
         </nav>
         <button className="admin-logout" onClick={handleLogout}>Logout</button>
       </div>
@@ -183,6 +311,7 @@ const AdminPanel = () => {
           <div className="admin-error-banner" onClick={() => setError("")}>{error} ✕</div>
         )}
 
+        {/* ── Orders Tab ── */}
         {activeTab === "orders" && (
           <div className="admin-section">
             <div className="section-header">
@@ -207,7 +336,6 @@ const AdminPanel = () => {
                 </thead>
                 <tbody>
                   {orders.map(order => {
-                    // ── Warehouse role flags ──────────────────────────────
                     const myWH = Number(adminWarehouse?.warehouse_id);
                     const srcWH = Number(order.source_warehouse_id);
                     const dstWH = Number(order.destination_warehouse_id);
@@ -215,6 +343,7 @@ const AdminPanel = () => {
                     const iAmSellerAdmin = myWH === srcWH;
                     const iAmCustomerAdmin = myWH === dstWH;
                     const status = order.order_status;
+                    const isDeliveryOnlyStatus = DELIVERY_ONLY_STATUSES.includes(status);
 
                     return (
                       <tr key={order.order_id}>
@@ -229,7 +358,6 @@ const AdminPanel = () => {
 
                         {/* ── Warehouse Action ── */}
                         <td>
-                          {/* Seller-WH admin: both warehouses differ → show "Send to Customer WH" */}
                           {iAmSellerAdmin && !sameWarehouse && status === "sent_seller_wh" && (
                             <button
                               className="warehouse-action-btn"
@@ -238,54 +366,55 @@ const AdminPanel = () => {
                               Send to Customer Warehouse
                             </button>
                           )}
-
-                          {/* Seller-WH admin: already dispatched to customer WH */}
                           {iAmSellerAdmin && !sameWarehouse && status === "sent_customer_wh" && (
                             <span className="ready-text">📦 In transit to customer warehouse</span>
                           )}
-
-                          {/* Customer-WH admin: order has arrived */}
                           {iAmCustomerAdmin && !sameWarehouse && status === "sent_customer_wh" && (
                             <span className="ready-text">✓ Order arrived — assign delivery man →</span>
                           )}
-
-                          {/* Same warehouse: no inter-warehouse transfer needed */}
                           {sameWarehouse && iAmSellerAdmin && status === "sent_seller_wh" && (
                             <span className="ready-text">Same warehouse — assign directly →</span>
+                          )}
+                          {/* Read-only label for delivery-stage orders */}
+                          {isDeliveryOnlyStatus && (
+                            <span className="delivery-only-tag">🚴 With delivery man</span>
                           )}
                         </td>
 
                         {/* ── Delivery Action ── */}
                         <td>
-                          {/*
-                           * CASE 1: Same warehouse admin assigns after seller sends to wh
-                           * CASE 2: Customer-WH admin assigns after order arrives from seller WH
-                           * In both cases the order must be in the right status.
-                           */}
+                          {/* Assignment dropdowns — only when order is ready */}
                           {sameWarehouse && iAmSellerAdmin && status === "sent_seller_wh" && (
                             <DeliverySelect order={order} />
                           )}
-
                           {iAmCustomerAdmin && !sameWarehouse && status === "sent_customer_wh" && (
                             <DeliverySelect order={order} />
                           )}
 
-                          {/* Post-assignment: let the admin move through delivery stages */}
-                          {["assigned", "picked", "on_the_way"].includes(status) && (
-                            <select
-                              className="status-select"
-                              value={status}
-                              onChange={e => handleStatusChange(order.order_id, e.target.value)}
-                            >
-                              {["assigned", "picked", "on_the_way", "delivered"].map(s => (
-                                <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
-                              ))}
-                            </select>
+                          {/* 
+                            Admin can only see status for assigned orders — 
+                            picked / on_the_way / delivered are delivery man only.
+                            We show a read-only status badge for those.
+                          */}
+                          {status === "assigned" && (
+                            <div className="assigned-info">
+                              <span className="status-badge status-assigned">Assigned</span>
+                              {order.deliveryman_name && (
+                                <div className="assigned-name">✓ {order.deliveryman_name}</div>
+                              )}
+                              <div className="delivery-only-note">
+                                Delivery man will update further statuses
+                              </div>
+                            </div>
                           )}
 
-                          {["assigned", "picked", "on_the_way", "delivered"].includes(status)
-                            && order.deliveryman_name && (
-                            <div className="assigned-name">✓ {order.deliveryman_name}</div>
+                          {isDeliveryOnlyStatus && (
+                            <div className="assigned-info">
+                              <StatusBadge status={status} />
+                              {order.deliveryman_name && (
+                                <div className="assigned-name">✓ {order.deliveryman_name}</div>
+                              )}
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -298,6 +427,7 @@ const AdminPanel = () => {
           </div>
         )}
 
+        {/* ── Delivery Men Tab ── */}
         {activeTab === "delivery" && (
           <div className="admin-section">
             <div className="section-header">
@@ -348,6 +478,171 @@ const AdminPanel = () => {
               ))}
               {deliveryMen.length === 0 && <p className="empty-msg">No delivery men added yet</p>}
             </div>
+          </div>
+        )}
+
+        {/* ── Promo Codes Tab ── */}
+        {activeTab === "promo" && (
+          <div className="admin-section">
+            <div className="section-header">
+              <h2>Promo Codes</h2>
+              <button className="add-btn" onClick={() => { resetPromoForm(); setShowPromoForm(!showPromoForm); }}>
+                {showPromoForm && !editingPromo ? "Cancel" : "+ Create New"}
+              </button>
+            </div>
+
+            {promoSuccess && (
+              <div className="promo-success-banner" onClick={() => setPromoSuccess("")}>
+                ✓ {promoSuccess}
+              </div>
+            )}
+
+            {(showPromoForm || editingPromo) && (
+              <div className="add-form">
+                <h3>{editingPromo ? "Edit Promo Code" : "Create Promo Code"}</h3>
+                <div className="promo-form-grid">
+                  <div className="promo-field">
+                    <label>Promo Code *</label>
+                    <input
+                      name="code"
+                      placeholder="e.g. SAVE20"
+                      value={promoForm.code}
+                      onChange={handlePromoFormChange}
+                      style={{ textTransform: "uppercase" }}
+                    />
+                  </div>
+                  <div className="promo-field">
+                    <label>Discount % *</label>
+                    <input
+                      name="discount_percentage"
+                      type="number"
+                      placeholder="e.g. 15"
+                      min="1" max="100"
+                      value={promoForm.discount_percentage}
+                      onChange={handlePromoFormChange}
+                    />
+                  </div>
+                  <div className="promo-field">
+                    <label>Minimum Cart Value ($) *</label>
+                    <input
+                      name="min_buy_amount"
+                      type="number"
+                      placeholder="e.g. 50"
+                      min="0"
+                      value={promoForm.min_buy_amount}
+                      onChange={handlePromoFormChange}
+                    />
+                  </div>
+                  <div className="promo-field">
+                    <label>Max Discount Amount ($) *</label>
+                    <input
+                      name="max_discount_amount"
+                      type="number"
+                      placeholder="e.g. 20"
+                      min="0"
+                      value={promoForm.max_discount_amount}
+                      onChange={handlePromoFormChange}
+                    />
+                  </div>
+                  <div className="promo-field">
+                    <label>Usage Limit (0 = unlimited) *</label>
+                    <input
+                      name="usage_limit"
+                      type="number"
+                      placeholder="e.g. 100"
+                      min="0"
+                      value={promoForm.usage_limit}
+                      onChange={handlePromoFormChange}
+                    />
+                  </div>
+                </div>
+
+                {/* Preview box */}
+                {promoForm.discount_percentage && promoForm.min_buy_amount !== "" && promoForm.max_discount_amount && (
+                  <div className="promo-preview">
+                    <strong>Preview:</strong> Code <em>{promoForm.code || "???"}</em> gives{" "}
+                    <strong>{promoForm.discount_percentage}% off</strong> on orders over{" "}
+                    <strong>${promoForm.min_buy_amount}</strong>, up to a max discount of{" "}
+                    <strong>${promoForm.max_discount_amount}</strong>.
+                  </div>
+                )}
+
+                {editingPromo && (
+                  <div className="promo-active-toggle">
+                    <label>
+                      <input
+                        type="checkbox"
+                        name="is_active"
+                        checked={promoForm.is_active}
+                        onChange={handlePromoFormChange}
+                      />
+                      &nbsp; Active
+                    </label>
+                  </div>
+                )}
+
+                <div className="promo-form-actions">
+                  <button className="save-btn" type="button" onClick={handleSavePromo} disabled={promoSaving}>
+                    {promoSaving ? (editingPromo ? "Updating..." : "Creating...") : (editingPromo ? "Update Promo Code" : "Create Promo Code")}
+                  </button>
+                  {editingPromo && (
+                    <button className="cancel-edit-btn" type="button" onClick={resetPromoForm}>
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {promoLoading ? (
+              <p className="empty-msg">Loading promo codes...</p>
+            ) : (
+              <div className="promo-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Code</th>
+                      <th>Discount %</th>
+                      <th>Min Buy ($)</th>
+                      <th>Max Discount ($)</th>
+                      <th>Usage Used/Limit</th>
+                      <th>Status</th>
+                      <th>Created</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {promoCodes.map(promo => (
+                      <tr key={promo.promo_id}>
+                        <td><strong className="promo-code-text">{promo.code}</strong></td>
+                        <td>{parseFloat(promo.discount_percentage).toFixed(1)}%</td>
+                        <td>${parseFloat(promo.min_buy_amount).toFixed(2)}</td>
+                        <td>${parseFloat(promo.max_discount_amount).toFixed(2)}</td>
+                        <td>{promo.used_count || 0}/{promo.usage_limit || "∞"}</td>
+                        <td>
+                          <span
+                            className={`promo-status-badge ${promo.is_active ? "active" : "inactive"}`}
+                            style={{ cursor: "pointer" }}
+                            title="Click to toggle"
+                            onClick={() => handleTogglePromoActive(promo)}
+                          >
+                            {promo.is_active ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                        <td>{new Date(promo.created_at).toLocaleDateString()}</td>
+                        <td>
+                          <div className="promo-actions">
+                            <button className="promo-edit-btn" onClick={() => handleEditPromo(promo)}>Edit</button>
+                            <button className="promo-delete-btn" onClick={() => handleDeletePromo(promo.promo_id)}>Delete</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {promoCodes.length === 0 && <p className="empty-msg">No promo codes created yet</p>}
+              </div>
+            )}
           </div>
         )}
       </div>

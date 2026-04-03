@@ -123,6 +123,7 @@ const OrderTracking = () => {
       ) : (
         <div className="ot-orders-list">
           {orders.map(order => {
+            console.log('Order details', order.order_id, order.shipping_address, order.phone_number, order.customer_address, order.customer_phone);
             const isCancelled = order.order_status === 'cancelled';
             const currentStep = getStepIndex(order.order_status);
             const statusInfo = STATUS_INFO[order.order_status] || STATUS_INFO.pending;
@@ -187,8 +188,8 @@ const OrderTracking = () => {
                         <h4>Order Info</h4>
                         <p><span>Transaction ID</span><strong>{order.tran_id}</strong></p>
                         <p><span>Payment</span><strong>{order.payment_method?.toUpperCase()} / {order.payment_status}</strong></p>
-                        <p><span>Ship To</span><strong>{order.shipping_address}</strong></p>
-                        <p><span>Phone</span><strong>{order.phone_number}</strong></p>
+                        <p><span>Ship To</span><strong>{order.shipping_address || order.customer_address || 'Not provided'}</strong></p>
+                        <p><span>Phone</span><strong>{order.phone_number || order.customer_phone || order.phone || 'Not provided'}</strong></p>
                         {order.order_notes && <p><span>Notes</span><strong>{order.order_notes}</strong></p>}
                       </div>
 

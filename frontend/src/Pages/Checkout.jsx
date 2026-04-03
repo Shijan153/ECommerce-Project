@@ -17,6 +17,7 @@ const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [promoApplying, setPromoApplying] = useState(false);
   const [promoApplied, setPromoApplied] = useState(false);
   const [discount, setDiscount] = useState(0);
 
@@ -45,15 +46,47 @@ const Checkout = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const applyPromo = () => {
-    if (form.promo_code === 'SAVE10') {
-      setDiscount(subtotal * 0.1);
+  const applyPromo = async () => {
+    setError('');
+    setPromoApplied(false);
+    setDiscount(0);
+
+    const code = form.promo_code?.trim();
+    if (!code) {
+      setError('Please enter a promo code.');
+      return;
+    }
+
+    setPromoApplying(true);
+    try {
+      const res = await fetch('http://localhost:5000/api/promo/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ code, cart_total: subtotal.toFixed(2) })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || 'Invalid promo code');
+        return;
+      }
+
+      const appliedDiscount = parseFloat(data.data?.applied_discount || data.applied_discount || 0);
+      if (appliedDiscount <= 0) {
+        setError('Promo code is valid but no discount applies.');
+        return;
+      }
+
+      setDiscount(appliedDiscount);
       setPromoApplied(true);
       setError('');
-    } else {
-      setError('Invalid promo code');
-      setPromoApplied(false);
-      setDiscount(0);
+    } catch (err) {
+      console.error('Promo apply error:', err);
+      setError('Unable to apply promo code at the moment.');
+    } finally {
+      setPromoApplying(false);
     }
   };
 
@@ -80,9 +113,7 @@ const Checkout = () => {
     setError('');
 
     try {
-      const endpoint = paymentMethod === 'sslcommerz'
-        ? 'http://localhost:5000/api/orders/ssl/init'
-        : 'http://localhost:5000/api/orders/cod';
+      const endpoint = 'http://localhost:5000/api/orders/cod';
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -93,6 +124,8 @@ const Checkout = () => {
         body: JSON.stringify({
           order_notes: form.order_notes,
           total_amount: total.toFixed(2),
+          promo_code: form.promo_code || null,
+          discount_amount: discount > 0 ? discount.toFixed(2) : 0,
           items: buildOrderItems()
         })
       });
@@ -101,12 +134,8 @@ const Checkout = () => {
       console.log('Order response:', data);
 
       if (response.ok) {
-        if (paymentMethod === 'sslcommerz') {
-          window.location.href = data.data.payment_url;
-        } else {
-          if (setCartItems) setCartItems({});
-          navigate(`/order-confirmation?tran_id=${data.data.tran_id}&status=success`);
-        }
+        if (setCartItems) setCartItems({});
+        navigate(`/order-confirmation?tran_id=${data.data.tran_id}&status=success`);
       } else {
         setError(data.message || 'Failed to place order');
       }
@@ -148,7 +177,14 @@ const Checkout = () => {
                 onChange={handleChange}
                 placeholder="Enter promo code"
               />
-              <button className="promo-btn" onClick={applyPromo}>Apply</button>
+              <button
+                type="button"
+                className="promo-btn"
+                onClick={applyPromo}
+                disabled={promoApplying}
+              >
+                {promoApplying ? 'Applying...' : 'Apply'}
+              </button>
             </div>
             {promoApplied && (
               <p className="promo-success">Promo applied! You saved ${discount.toFixed(2)}</p>
@@ -170,22 +206,6 @@ const Checkout = () => {
                   <div>
                     <strong>Cash on Delivery</strong>
                     <p>Pay when your order arrives</p>
-                  </div>
-                </div>
-              </label>
-
-              <label className={`payment-option ${paymentMethod === 'sslcommerz' ? 'selected' : ''}`}>
-                <input
-                  type="radio"
-                  value="sslcommerz"
-                  checked={paymentMethod === 'sslcommerz'}
-                  onChange={() => setPaymentMethod('sslcommerz')}
-                />
-                <div className="payment-option-content">
-                  <span className="payment-icon">💳</span>
-                  <div>
-                    <strong>SSLCommerz</strong>
-                    <p>bKash, Nagad, Cards & more</p>
                   </div>
                 </div>
               </label>
